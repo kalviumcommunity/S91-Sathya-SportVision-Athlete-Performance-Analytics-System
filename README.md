@@ -1,3 +1,9 @@
 # SportVision Athlete Performance Analytics System
 
-A platform concept for helping academy coaches track athlete development and plan focused training.
+SportVision helps academy coaches understand athlete performance, track development, and plan focused training.
+
+## Mock UX Design
+
+[Open the interactive Mock UX](https://raw.githack.com/kalviumcommunity/S91-Sathya-SportVision-Athlete-Performance-Analytics-System/feature/mock-ux-design/mock-ux.html) · [View the HTML source](mock-ux.html)
+
+This mock UX covers the coach overview, athlete roster and profiles, personalized recommendations, training plans, and academy insights. The primary journey moves from squad trends to an athlete’s development needs and a targeted training follow-up.
