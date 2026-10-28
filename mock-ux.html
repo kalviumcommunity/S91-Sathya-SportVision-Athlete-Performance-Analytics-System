@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f4">
+  <title>SportVision | Mock UX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17241f;
+      --muted: #748078;
+      --line: #e4e9e4;
+      --paper: #f6f7f4;
+      --white: #fff;
+      --green: #245c46;
+      --lime: #c9ef77;
+      --orange: #e87b4a;
+      --blue: #69a8b7;
+      --soft-green: #edf4ee;
+      --radius: 10px;
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-size: 14px; }
+    button, input, select { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    .app { display: grid; grid-template-columns: 228px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { display: flex; flex-direction: column; padding: 26px 16px 18px; background: #193b30; color: #f5f8f2; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 0 10px 31px; font: 700 17px 'Space Grotesk', sans-serif; letter-spacing: 0; }
+    .brand-mark { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 8px; background: var(--lime); color: #193b30; font: 700 15px 'Space Grotesk', sans-serif; }
+    .workspace-label { padding: 0 11px 9px; color: #a7b9ae; font-size: 10px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; }
+    .nav button { display: flex; align-items: center; gap: 11px; min-height: 41px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent; color: #c6d2ca; text-align: left; }
+    .nav button:hover, .nav button.active { background: #2b5142; color: #fff; }
+    .nav-symbol { display: grid; width: 19px; place-items: center; color: var(--lime); font-size: 15px; }
+    .side-bottom { margin-top: auto; }
+    .season { margin: 20px 4px; padding: 14px; border: 1px solid #426354; border-radius: 8px; }
+    .season strong { display: block; margin-bottom: 5px; font-size: 12px; }
+    .season span { color: #b6c8bd; font-size: 11px; }
+    .coach { display: flex; align-items: center; gap: 10px; padding: 13px 8px 0; border-top: 1px solid #426354; }
+    .avatar { display: grid; flex: 0 0 auto; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #dce8df; color: #275340; font-size: 11px; font-weight: 700; }
+    .coach strong, .coach small { display: block; }
+    .coach strong { font-size: 12px; }
+    .coach small { margin-top: 3px; color: #b6c8bd; font-size: 10px; }
+    main { min-width: 0; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 74px; padding: 0 clamp(20px, 4vw, 52px); border-bottom: 1px solid var(--line); background: rgba(255,255,255,.72); }
+    .crumb { color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .icon-button, .outline-button, .primary-button { min-height: 37px; border-radius: 7px; }
+    .icon-button { width: 38px; border: 1px solid var(--line); background: white; font-size: 16px; }
+    .outline-button { padding: 0 13px; border: 1px solid #ccd7ce; background: white; font-size: 12px; font-weight: 600; }
+    .primary-button { padding: 0 14px; border: 1px solid var(--green); background: var(--green); color: white; font-size: 12px; font-weight: 700; }
+    .primary-button:hover { background: #174b37; }
+    .outline-button:hover, .icon-button:hover { border-color: #8ea498; background: #f6f9f6; }
+    .content { width: min(1320px, 100%); margin: 0 auto; padding: 33px clamp(20px, 4vw, 52px) 50px; }
+    .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 25px; }
+    .eyebrow { margin: 0 0 7px; color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 5px; font: 600 27px 'Space Grotesk', sans-serif; letter-spacing: 0; }
+    .subtitle { margin: 0; color: var(--muted); font-size: 12px; }
+    .date-control { display: flex; align-items: center; gap: 10px; }
+    .date-control span { color: var(--muted); font-size: 11px; }
+    select { min-height: 37px; padding: 0 30px 0 11px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); font-size: 12px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat { min-height: 118px; padding: 17px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
+    .stat-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .stat-value { display: block; margin: 13px 0 3px; font: 600 27px 'Space Grotesk', sans-serif; }
+    .trend { color: var(--green); font-size: 10px; font-weight: 700; }
+    .trend.neutral { color: var(--muted); }
+    .overview-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(255px, .9fr); gap: 15px; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: white; }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 19px 0; }
+    h2 { margin-bottom: 4px; font: 600 15px 'Space Grotesk', sans-serif; letter-spacing: 0; }
+    .panel-subtitle { margin: 0; color: var(--muted); font-size: 11px; }
+    .chart-legend { display: flex; gap: 13px; color: var(--muted); font-size: 10px; }
+    .legend-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--green); }
+    .legend-dot.orange { background: var(--orange); }
+    .chart-wrap { padding: 10px 18px 14px; }
+    .chart { display: block; width: 100%; height: auto; min-height: 180px; }
+    .chart text { fill: #87918a; font: 10px 'DM Sans', sans-serif; }
+    .chart .gridline { stroke: #e9ede9; stroke-width: 1; }
+    .chart .line-a { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .chart .line-b { fill: none; stroke: var(--orange); stroke-width: 2; stroke-dasharray: 4 5; stroke-linecap: round; }
+    .chart .dot-a { fill: #fff; stroke: var(--green); stroke-width: 3; }
+    .insight { padding: 19px; background: #f0f5ef; border-color: #dfe9df; }
+    .insight-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+    .insight-tag { padding: 5px 8px; border-radius: 4px; background: #e1eddf; color: var(--green); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+    .insight h2 { font-size: 17px; line-height: 1.35; }
+    .insight p { margin: 9px 0 18px; color: #5f6e63; font-size: 11px; line-height: 1.6; }
+    .insight .primary-button { min-height: 34px; }
+    .bottom-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(255px, .9fr); gap: 15px; margin-top: 15px; }
+    .roster-list { padding: 8px 18px 14px; }
+    .roster-row { display: grid; grid-template-columns: minmax(130px,1.3fr) minmax(85px,.8fr) minmax(100px,1fr) 24px; align-items: center; gap: 12px; min-height: 56px; border-top: 1px solid #edf0ed; cursor: pointer; }
+    .roster-row:hover .athlete-name { color: var(--green); }
+    .athlete-cell { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .athlete-cell .avatar { width: 31px; height: 31px; font-size: 10px; }
+    .athlete-name { overflow: hidden; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .athlete-meta { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .score { font: 600 13px 'Space Grotesk', sans-serif; }
+    .mini-track { overflow: hidden; height: 5px; border-radius: 5px; background: #edf0ed; }
+    .mini-track span { display: block; height: 100%; border-radius: 5px; background: var(--green); }
+    .arrow { color: #87918a; font-size: 17px; text-align: right; }
+    .schedule { padding: 6px 18px 14px; }
+    .schedule-row { display: grid; grid-template-columns: 41px 1fr; gap: 11px; padding: 12px 0; border-top: 1px solid #edf0ed; }
+    .schedule-time { color: var(--green); font: 600 11px 'Space Grotesk', sans-serif; }
+    .schedule-title { font-size: 11px; font-weight: 700; }
+    .schedule-meta { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .view-all { border: 0; background: transparent; color: var(--green); font-size: 11px; font-weight: 700; }
+    .section-toolbar { display: flex; align-items: center; gap: 9px; }
+    .search-input { width: min(230px, 45vw); min-height: 37px; padding: 0 11px; border: 1px solid var(--line); border-radius: 7px; background: white; font-size: 12px; }
+    .athlete-table { width: 100%; border-collapse: collapse; }
+    .athlete-table th { padding: 13px 17px; color: var(--muted); font-size: 10px; font-weight: 600; text-align: left; }
+    .athlete-table td { padding: 12px 17px; border-top: 1px solid #edf0ed; font-size: 11px; }
+    .athlete-table tbody tr { cursor: pointer; }
+    .athlete-table tbody tr:hover { background: #f7faf6; }
+    .status { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font-size: 10px; }
+    .status::before { width: 6px; height: 6px; border-radius: 50%; background: #62a77b; content: ''; }
+    .profile-head { display: flex; align-items: center; gap: 15px; }
+    .profile-head .avatar { width: 55px; height: 55px; font-size: 15px; }
+    .profile-meta { margin: 0; color: var(--muted); font-size: 11px; }
+    .back-button { padding: 0; border: 0; background: none; color: var(--green); font-size: 11px; font-weight: 700; }
+    .profile-score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 17px 0; }
+    .metric { padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+    .metric-label { color: var(--muted); font-size: 10px; }
+    .metric-value { display: block; margin: 9px 0 4px; font: 600 23px 'Space Grotesk', sans-serif; }
+    .profile-grid { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(260px,.8fr); gap: 15px; }
+    .metric-bars { padding: 17px 19px 20px; }
+    .bar-row { display: grid; grid-template-columns: 100px 1fr 30px; align-items: center; gap: 11px; margin: 16px 0; font-size: 11px; }
+    .bar-row .mini-track { height: 8px; }
+    .recommendation { padding: 18px; }
+    .recommendation h2 { margin: 10px 0 8px; font-size: 16px; }
+    .recommendation p { color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .recommendation .primary-button { width: 100%; margin-top: 5px; }
+    .training-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .session-card { padding: 18px; }
+    .session-card p { margin: 10px 0 15px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .session-meta { display: flex; gap: 12px; color: var(--green); font-size: 10px; font-weight: 700; }
+    .report-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 17px 0; }
+    .report-card { padding: 17px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+    .report-card strong { display: block; margin: 10px 0 5px; font: 600 22px 'Space Grotesk', sans-serif; }
+    .report-card span { color: var(--muted); font-size: 10px; }
+    .empty { padding: 24px; color: var(--muted); font-size: 12px; text-align: center; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 3; padding: 12px 16px; border-radius: 7px; background: var(--ink); color: white; font-size: 12px; box-shadow: 0 8px 24px #17241f2e; }
+    .toast[hidden] { display: none; }
+    .mobile-brand { display: none; }
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 190px minmax(0,1fr); }
+      .overview-grid, .bottom-grid, .profile-grid { grid-template-columns: 1fr; }
+      .insight { min-height: auto; }
+      .stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 650px) {
+      .app { display: block; padding-bottom: 64px; }
+      .sidebar { position: fixed; z-index: 2; right: 0; bottom: 0; left: 0; display: block; padding: 0; }
+      .brand, .workspace-label, .side-bottom { display: none; }
+      .nav { grid-template-columns: repeat(4, 1fr); gap: 0; }
+      .nav button { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 62px; padding: 6px 2px; border-radius: 0; font-size: 9px; }
+      .nav-symbol { font-size: 17px; }
+      .topbar { min-height: 58px; padding: 0 17px; }
+      .mobile-brand { display: inline; color: var(--ink); font: 700 14px 'Space Grotesk', sans-serif; }
+      .crumb, .top-actions .outline-button { display: none; }
+      .content { padding: 25px 16px 35px; }
+      .page-heading { align-items: flex-start; flex-direction: column; }
+      h1 { font-size: 24px; }
+      .date-control { width: 100%; justify-content: space-between; }
+      .date-control select { flex: 1; max-width: 210px; }
+      .stats { gap: 8px; }
+      .stat { min-height: 104px; padding: 13px; }
+      .stat-value { font-size: 23px; }
+      .panel-head { padding-right: 14px; padding-left: 14px; }
+      .chart-wrap { padding-right: 9px; padding-left: 9px; }
+      .roster-list { padding-right: 12px; padding-left: 12px; }
+      .roster-row { grid-template-columns: minmax(108px,1.2fr) 45px minmax(45px,.7fr) 14px; gap: 7px; }
+      .roster-row .mini-track { display: none; }
+      .roster-row .score { font-size: 11px; }
+      .athlete-table { min-width: 590px; }
+      .panel.table-panel { overflow-x: auto; }
+      .profile-score-grid, .report-summary { gap: 7px; }
+      .metric, .report-card { padding: 12px; }
+      .metric-value { font-size: 19px; }
+      .training-grid { grid-template-columns: 1fr; }
+      .search-input { width: 100%; }
+      .section-toolbar { width: 100%; }
+      .section-toolbar .search-input { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand"><span class="brand-mark">S</span> SportVision</div>
+      <div class="workspace-label">Academy workspace</div>
+      <nav class="nav">
+        <button class="active" data-page="overview"><span class="nav-symbol">▦</span>Overview</button>
+        <button data-page="athletes"><span class="nav-symbol">◉</span>Athletes</button>
+        <button data-page="training"><span class="nav-symbol">↗</span>Training</button>
+        <button data-page="insights"><span class="nav-symbol">▥</span>Insights</button>
+      </nav>
+      <div class="side-bottom">
+        <div class="season"><strong>Season 2025–26</strong><span>U18 Development · Week 08</span></div>
+        <div class="coach"><span class="avatar">JM</span><span><strong>Jordan Miller</strong><small>Performance coach</small></span></div>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <span class="mobile-brand">SportVision</span>
+        <span class="crumb" id="breadcrumb">Academy workspace&nbsp; / &nbsp;Overview</span>
+        <div class="top-actions">
+          <button class="outline-button" data-action="export">↓ &nbsp;Export report</button>
+          <button class="icon-button" aria-label="Notifications" title="Notifications">♧</button>
+          <span class="avatar" aria-label="Jordan Miller">JM</span>
+        </div>
+      </header>
+      <div class="content" id="content"></div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script>
+    const athletes = [
+      { id: 'maya', name: 'Maya Chen', initials: 'MC', group: 'U18 · Midfielder', score: 86, change: '+8%', speed: 82, endurance: 91, strength: 74, agility: 88, focus: 'Build acceleration', note: 'Maya’s aerobic capacity is trending up. Short sprint intervals can help turn that engine into faster first-step acceleration.', color: '#dce8df' },
+      { id: 'leo', name: 'Leo Martins', initials: 'LM', group: 'U18 · Forward', score: 79, change: '+3%', speed: 91, endurance: 72, strength: 81, agility: 78, focus: 'Improve recovery', note: 'Leo’s top speed is a clear strength. Recovery consistency dipped this week; protect rest intervals before adding more sprint volume.', color: '#f1e2d9' },
+      { id: 'amara', name: 'Amara Okafor', initials: 'AO', group: 'U16 · Defender', score: 83, change: '+6%', speed: 78, endurance: 86, strength: 89, agility: 80, focus: 'Maintain strength', note: 'Amara is progressing steadily across strength measures. Keep the current load and add a mobility check-in after the next session.', color: '#e5e3f0' },
+      { id: 'noah', name: 'Noah Patel', initials: 'NP', group: 'U18 · Goalkeeper', score: 74, change: '−2%', speed: 76, endurance: 73, strength: 78, agility: 69, focus: 'Agility baseline', note: 'Agility scores have flattened across the last three check-ins. A short change-of-direction block is a useful next step.', color: '#e7e9d8' }
+    ];
+    const pages = ['overview', 'athletes', 'training', 'insights'];
+    let currentPage = 'overview';
+    let selectedAthlete = null;
+    let period = 'This month';
+    let searchTerm = '';
+    const content = document.getElementById('content');
+
+    function athleteAvatar(athlete) {
+      return `<span class="avatar" style="background:${athlete.color}">${athlete.initials}</span>`;
+    }
+    function heading(kicker, title, subtitle, extra = '') {
+      return `<div class="page-heading"><div><p class="eyebrow">${kicker}</p><h1>${title}</h1><p class="subtitle">${subtitle}</p></div>${extra}</div>`;
+    }
+    function drawOverview() {
+      const score = period === 'This week' ? 79 : period === 'This quarter' ? 84 : 81;
+      return `${heading('Monday, 16 February 2026', 'Good morning, Jordan', 'A clear view of your squad’s progress and the next best coaching action.', `<label class="date-control"><span>Showing</span><select id="period" aria-label="Reporting period"><option ${period === 'This week' ? 'selected' : ''}>This week</option><option ${period === 'This month' ? 'selected' : ''}>This month</option><option ${period === 'This quarter' ? 'selected' : ''}>This quarter</option></select></label>`)}
+        <section class="stats" aria-label="Squad summary">
+          <article class="stat"><div class="stat-top"><span>Active athletes</span><span>●</span></div><strong class="stat-value">24</strong><span class="trend neutral">Across 3 age groups</span></article>
+          <article class="stat"><div class="stat-top"><span>Average performance</span><span>↗</span></div><strong class="stat-value">${score}<small style="font-size:13px;color:#748078"> / 100</small></strong><span class="trend">↑ 5.2% vs previous period</span></article>
+          <article class="stat"><div class="stat-top"><span>Sessions completed</span><span>✓</span></div><strong class="stat-value">18</strong><span class="trend neutral">Of 22 scheduled</span></article>
+          <article class="stat"><div class="stat-top"><span>Needs attention</span><span>!</span></div><strong class="stat-value">3</strong><span class="trend" style="color:#b85b36">2 recovery · 1 plateau</span></article>
+        </section>
+        <div class="overview-grid">
+          <section class="panel">
+            <div class="panel-head"><div><h2>Squad performance trend</h2><p class="panel-subtitle">Average assessment score over the last 8 weeks</p></div><div class="chart-legend"><span><i class="legend-dot"></i>Performance</span><span><i class="legend-dot orange"></i>Target</span></div></div>
+            <div class="chart-wrap"><svg class="chart" viewBox="0 0 620 215" role="img" aria-label="Squad performance scores trend upward from week one to week eight">
+              <line class="gridline" x1="42" y1="30" x2="605" y2="30"/><line class="gridline" x1="42" y1="75" x2="605" y2="75"/><line class="gridline" x1="42" y1="120" x2="605" y2="120"/><line class="gridline" x1="42" y1="165" x2="605" y2="165"/>
+              <text x="3" y="34">100</text><text x="9" y="79">80</text><text x="9" y="124">60</text><text x="9" y="169">40</text>
+              <path class="line-b" d="M50 92 L126 88 L202 84 L278 80 L354 76 L430 72 L506 68 L582 64"/>
+              <path class="line-a" d="M50 124 L126 114 L202 119 L278 100 L354 92 L430 82 L506 89 L582 71"/>
+              <circle class="dot-a" cx="50" cy="124" r="4"/><circle class="dot-a" cx="126" cy="114" r="4"/><circle class="dot-a" cx="202" cy="119" r="4"/><circle class="dot-a" cx="278" cy="100" r="4"/><circle class="dot-a" cx="354" cy="92" r="4"/><circle class="dot-a" cx="430" cy="82" r="4"/><circle class="dot-a" cx="506" cy="89" r="4"/><circle class="dot-a" cx="582" cy="71" r="4"/>
+              <text x="43" y="195">Wk 01</text><text x="195" y="195">Wk 03</text><text x="347" y="195">Wk 05</text><text x="500" y="195">Wk 07</text>
+            </svg></div>
+          </section>
+          <section class="panel insight"><div class="insight-top"><span class="insight-tag">Coach insight</span><span aria-hidden="true">↗</span></div><h2>Maya’s endurance is up 12% this month</h2><p>Her speed score has stayed flat. A short acceleration block could help convert recent conditioning gains into match-day impact.</p><button class="primary-button" data-athlete="maya">Review Maya’s profile&nbsp; →</button></section>
+        </div>
+        <div class="bottom-grid">
+          <section class="panel"><div class="panel-head"><div><h2>Athletes to watch</h2><p class="panel-subtitle">Recent progress and coaching focus</p></div><button class="view-all" data-page="athletes">View roster&nbsp; →</button></div><div class="roster-list">${athletes.slice(0,3).map(a => `<div class="roster-row" data-athlete="${a.id}"><div class="athlete-cell">${athleteAvatar(a)}<span><span class="athlete-name">${a.name}</span><span class="athlete-meta">${a.group}</span></span></div><span class="score">${a.score}<span style="color:#87918a;font-size:9px"> / 100</span></span><div class="mini-track"><span style="width:${a.score}%"></span></div><span class="arrow">›</span></div>`).join('')}</div></section>
+          <section class="panel"><div class="panel-head"><div><h2>Today’s sessions</h2><p class="panel-subtitle">Monday · 16 February</p></div><button class="view-all" data-page="training">Full schedule&nbsp; →</button></div><div class="schedule"><div class="schedule-row"><span class="schedule-time">09:00</span><span><span class="schedule-title">Speed & acceleration</span><span class="schedule-meta">U18 squad · Pitch 2</span></span></div><div class="schedule-row"><span class="schedule-time">11:30</span><span><span class="schedule-title">Strength foundations</span><span class="schedule-meta">U16 squad · Gym</span></span></div><div class="schedule-row"><span class="schedule-time">15:00</span><span><span class="schedule-title">Recovery check-in</span><span class="schedule-meta">4 athletes · Performance room</span></span></div></div></section>
+        </div>`;
+    }
+    function drawAthletes() {
+      const visible = athletes.filter(a => `${a.name} ${a.group}`.toLowerCase().includes(searchTerm.toLowerCase()));
+      return `${heading('Squad management', 'Athletes', 'Review individual progress and open a profile for personalized coaching.', `<div class="section-toolbar"><input id="athlete-search" class="search-input" type="search" value="${searchTerm}" placeholder="Search athletes" aria-label="Search athletes"><button class="primary-button" data-action="add-athlete">＋ Add athlete</button></div>`)}
+        <section class="panel table-panel"><table class="athlete-table"><thead><tr><th>ATHLETE</th><th>GROUP</th><th>PERFORMANCE</th><th>CHANGE</th><th>STATUS</th><th></th></tr></thead><tbody>${visible.map(a => `<tr data-athlete="${a.id}"><td><div class="athlete-cell">${athleteAvatar(a)}<span class="athlete-name">${a.name}</span></div></td><td>${a.group}</td><td><strong>${a.score}</strong> / 100</td><td style="color:${a.change.startsWith('−') ? '#b85b36' : '#245c46'};font-weight:700">${a.change}</td><td><span class="status">${a.id === 'noah' ? 'Review progress' : 'On track'}</span></td><td class="arrow">›</td></tr>`).join('') || '<tr><td class="empty" colspan="6">No athletes match that search.</td></tr>'}</tbody></table></section>`;
+    }
+    function drawProfile(athlete) {
+      return `${heading('Athlete profile', '', '', `<button class="back-button" data-page="athletes">← Back to athletes</button>`).replace('<h1></h1>', `<div class="profile-head">${athleteAvatar(athlete)}<div><h1>${athlete.name}</h1><p class="profile-meta">${athlete.group} &nbsp;·&nbsp; Joined September 2024</p></div></div>`)}
+        <section class="profile-score-grid"><article class="metric"><span class="metric-label">Performance score</span><strong class="metric-value">${athlete.score}<small style="font-size:12px;color:#748078"> / 100</small></strong><span class="trend">${athlete.change} this month</span></article><article class="metric"><span class="metric-label">Assessments completed</span><strong class="metric-value">8 <small style="font-size:12px;color:#748078"> / 10</small></strong><span class="trend neutral">Last check-in · 12 Feb</span></article><article class="metric"><span class="metric-label">Current focus</span><strong class="metric-value" style="font-size:17px">${athlete.focus}</strong><span class="trend neutral">Coach recommendation</span></article></section>
+        <div class="profile-grid"><section class="panel"><div class="panel-head"><div><h2>Performance breakdown</h2><p class="panel-subtitle">Latest assessment · compared with academy benchmarks</p></div><span class="insight-tag">Updated 12 Feb</span></div><div class="metric-bars">${[['Speed',athlete.speed],['Endurance',athlete.endurance],['Strength',athlete.strength],['Agility',athlete.agility]].map(([label,value]) => `<div class="bar-row"><span>${label}</span><div class="mini-track"><span style="width:${value}%;background:${value < 75 ? '#e87b4a' : '#245c46'}"></span></div><strong>${value}</strong></div>`).join('')}</div></section>
+        <section class="panel recommendation"><span class="insight-tag">Personalized coaching</span><h2>${athlete.focus}</h2><p>${athlete.note}</p><button class="primary-button" data-action="plan-session" data-athlete="${athlete.id}">＋ Add to training plan</button></section></div>`;
+    }
+    function drawTraining() {
+      return `${heading('Planning', 'Training', 'Turn performance signals into focused sessions for each athlete.', `<button class="primary-button" data-action="create-session">＋ Create session</button>`)}
+        <div class="training-grid">${[['09:00 · Pitch 2','Speed & acceleration','U18 squad · 12 athletes','4 drills · 55 min'],['11:30 · Gym','Strength foundations','U16 squad · 8 athletes','5 drills · 60 min'],['15:00 · Performance room','Recovery check-in','Selected athletes · 4 athletes','3 checks · 20 min']].map(s => `<article class="panel session-card"><p class="eyebrow">${s[0]}</p><h2>${s[1]}</h2><p>${s[2]}<br>Designed around this week’s assessment trends and squad load.</p><div class="session-meta"><span>${s[3]}</span><button class="view-all" data-action="edit-session">Edit session&nbsp; →</button></div></article>`).join('')}</div>
+        <section class="panel" style="margin-top:15px"><div class="panel-head"><div><h2>Individual focus queue</h2><p class="panel-subtitle">Suggested follow-ups based on recent assessments</p></div></div><div class="roster-list">${athletes.slice(0,3).map(a => `<div class="roster-row" data-athlete="${a.id}"><div class="athlete-cell">${athleteAvatar(a)}<span><span class="athlete-name">${a.name}</span><span class="athlete-meta">${a.focus}</span></span></div><span class="score">${a.score}<span style="color:#87918a;font-size:9px"> / 100</span></span><div class="mini-track"><span style="width:${a.score}%"></span></div><span class="arrow">›</span></div>`).join('')}</div></section>`;
+    }
+    function drawInsights() {
+      return `${heading('Performance analytics', 'Insights', 'Spot trends across the academy and decide where coaching time matters most.', `<button class="outline-button" data-action="export">↓ &nbsp;Export summary</button>`)}
+        <div class="report-summary"><article class="report-card"><span>Squad score change</span><strong>+5.2%</strong><span>Compared with previous month</span></article><article class="report-card"><span>Strongest area</span><strong>Endurance</strong><span>Average score · 84 / 100</span></article><article class="report-card"><span>Coaching opportunity</span><strong>Recovery</strong><span>3 athletes flagged for check-in</span></article></div>
+        <section class="panel"><div class="panel-head"><div><h2>Development opportunities</h2><p class="panel-subtitle">Ranked by potential impact and recent trend</p></div></div><div class="roster-list">${[['Recovery consistency','3 athletes','Check training load and rest quality.','High'],['Acceleration development','5 athletes','Pair sprint mechanics with current conditioning.','Medium'],['Agility progression','4 athletes','Add short change-of-direction assessments.','Medium']].map(([title,count,copy,priority]) => `<div class="schedule-row" style="grid-template-columns:1.1fr 1fr 2fr 60px;align-items:center"><span class="schedule-title">${title}</span><span class="schedule-meta">${count}</span><span class="schedule-meta">${copy}</span><span class="insight-tag">${priority}</span></div>`).join('')}</div></section>`;
+    }
+    function render() {
+      content.innerHTML = selectedAthlete ? drawProfile(selectedAthlete) : currentPage === 'overview' ? drawOverview() : currentPage === 'athletes' ? drawAthletes() : currentPage === 'training' ? drawTraining() : drawInsights();
+      document.getElementById('breadcrumb').innerHTML = `Academy workspace&nbsp; / &nbsp;${selectedAthlete ? 'Athletes / ' + selectedAthlete.name : currentPage[0].toUpperCase() + currentPage.slice(1)}`;
+      document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active', button.dataset.page === currentPage));
+      const periodSelect = document.getElementById('period');
+      if (periodSelect) periodSelect.addEventListener('change', event => { period = event.target.value; render(); });
+      const search = document.getElementById('athlete-search');
+      if (search) search.addEventListener('input', event => { searchTerm = event.target.value; const position = event.target.selectionStart; render(); const updated = document.getElementById('athlete-search'); updated.focus(); updated.setSelectionRange(position, position); });
+    }
+    function toast(message) {
+      const node = document.getElementById('toast');
+      node.textContent = message;
+      node.hidden = false;
+      window.clearTimeout(toast.timer);
+      toast.timer = window.setTimeout(() => { node.hidden = true; }, 2500);
+    }
+    document.addEventListener('click', event => {
+      const pageButton = event.target.closest('[data-page]');
+      const action = event.target.closest('[data-action]');
+      if (pageButton) { currentPage = pageButton.dataset.page; selectedAthlete = null; render(); return; }
+      if (action) {
+        if (action.dataset.action === 'plan-session') { currentPage = 'training'; selectedAthlete = null; render(); toast(`Personalized session started for ${athletes.find(a => a.id === action.dataset.athlete).name}.`); }
+        else if (action.dataset.action === 'export') toast('Your academy performance summary is ready to export.');
+        else if (action.dataset.action === 'add-athlete') toast('Athlete intake form opened.');
+        else if (action.dataset.action === 'create-session') toast('New training session draft created.');
+        else if (action.dataset.action === 'edit-session') toast('Session editor opened.');
+        return;
+      }
+      const athleteElement = event.target.closest('[data-athlete]');
+      if (athleteElement) { selectedAthlete = athletes.find(a => a.id === athleteElement.dataset.athlete); currentPage = 'athletes'; render(); }
+    });
+    render();
+  </script>
+</body>
+</html>
