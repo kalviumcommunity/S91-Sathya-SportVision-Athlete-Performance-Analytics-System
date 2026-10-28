@@ -1,0 +1,14 @@
+{
+  "name": "sportvision-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "mongoose": "^8.19.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

@@ -24,3 +24,13 @@ SportVision is a MERN platform for sports academies to record athlete assessment
 [Open the interactive Mock UX](https://raw.githack.com/kalviumcommunity/S91-Sathya-SportVision-Athlete-Performance-Analytics-System/feature/mock-ux-design/mock-ux.html) · [View the HTML source](mock-ux.html)
 
 This mock UX covers the coach overview, athlete roster and profiles, personalized recommendations, training plans, and academy insights. The primary journey moves from squad trends to an athlete’s development needs and a targeted training follow-up.
+
+## Mongoose Data Models
+
+The initial MongoDB schemas are in `server/src/models`:
+
+- `Athlete` stores athlete identity, sport, squad group, optional position/date of birth, and active status.
+- `Assessment` belongs to an athlete and stores a dated overall score, one or more measured metrics, and optional coach notes.
+- `TrainingSession` stores its schedule, duration, focus areas, participating athletes, and planned/completed/cancelled status.
+
+All three models enable Mongoose timestamps. Assessment history and squad/session queries have supporting indexes. To type-check the models, run `npm install` and `npm run typecheck` from `server`.
