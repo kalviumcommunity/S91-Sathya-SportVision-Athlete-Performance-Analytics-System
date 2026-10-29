@@ -56,7 +56,7 @@ The Vite development server proxies `/api` requests to `http://localhost:3000`. 
 | Resource | Routes |
 | --- | --- |
 | Athletes | `GET /api/athletes`, `GET /api/athletes/:id`, `POST /api/athletes`, `PATCH /api/athletes/:id`, `DELETE /api/athletes/:id` |
-| Assessments | `GET /api/assessments`, `GET /api/assessments/:id`, `POST /api/assessments`, `PATCH /api/assessments/:id`, `DELETE /api/assessments/:id` |
+| Assessments | `GET /api/assessments`, `GET /api/assessments/:id`, `POST /api/assessments`, `POST /api/athletes/:id/assessments`, `PATCH /api/assessments/:id`, `DELETE /api/assessments/:id` |
 | Training sessions | `GET /api/training-sessions`, `GET /api/training-sessions/:id`, `POST /api/training-sessions`, `PATCH /api/training-sessions/:id`, `DELETE /api/training-sessions/:id` |
 | Dashboard | `GET /api/dashboard/summary?period=week\|month\|quarter`, `GET /api/dashboard/performance-trend`, `GET /api/dashboard/upcoming-sessions?limit=5` |
 
@@ -68,4 +68,12 @@ Example athlete creation:
 curl -X POST http://localhost:3000/api/athletes \
   -H "Content-Type: application/json" \
   -d '{"firstName":"Maya","lastName":"Chen","sport":"Football","group":"U18","position":"Midfielder"}'
+```
+
+Create an assessment for an existing athlete using the nested endpoint. The athlete ID comes from `POST /api/athletes` or `GET /api/athletes`; it is taken from the URL rather than the request body:
+
+```sh
+curl -X POST http://localhost:3000/api/athletes/YOUR_ATHLETE_ID/assessments \
+  -H "Content-Type: application/json" \
+  -d '{"overallScore":86,"metrics":[{"name":"Acceleration","value":4.8,"unit":"m/s","score":86}],"notes":"Strong progress this month."}'
 ```
