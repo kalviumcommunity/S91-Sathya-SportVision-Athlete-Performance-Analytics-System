@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronRight, CircleHelp, ClipboardList, Download, Plus, Search, Users, Zap, Dumbbell } from 'lucide-react'
 import { AthleteTable, type Athlete } from './components/AthleteTable'
+import { AthleteEditor, type AthleteUpdate } from './components/AthleteEditor'
 import { CoachInsight } from './components/CoachInsight'
 import { MetricCard } from './components/MetricCard'
 import { PerformanceChart, type PerformancePoint } from './components/PerformanceChart'
@@ -8,13 +9,16 @@ import { Sidebar, type AppView } from './components/Sidebar'
 import './App.css'
 
 interface ApiAthlete {
-  id: string
+  id?: string
+  _id?: string
   firstName: string
   lastName: string
   sport: string
   group: string
   position?: string
-  latestAssessment: {
+  dateOfBirth?: string | null
+  status: 'active' | 'inactive'
+  latestAssessment?: {
     overallScore: number
     metrics: { name: string }[]
   } | null
@@ -39,6 +43,50 @@ interface ApiUpcomingSession {
 
 const athleteTones: Athlete['tone'][] = ['mint', 'peach', 'lilac', 'yellow']
 
+function mapApiAthlete(record: ApiAthlete, index: number): Athlete {
+  const id = record.id ?? record._id
+  if (!id) {
+    throw new Error('Athlete response did not include an ID.')
+  }
+  const initials = `${record.firstName.charAt(0)}${record.lastName.charAt(0)}`.toUpperCase()
+  return {
+    id,
+    name: `${record.firstName} ${record.lastName}`,
+    initials,
+    group: `${record.group} · ${record.position ?? record.sport}`,
+    score: record.latestAssessment?.overallScore ?? 0,
+    change: '—',
+    focus: record.latestAssessment?.metrics[0]?.name ?? 'Assessment needed',
+    tone: athleteTones[index % athleteTones.length],
+    details: {
+      firstName: record.firstName,
+      lastName: record.lastName,
+      sport: record.sport,
+      group: record.group,
+      position: record.position,
+      dateOfBirth: record.dateOfBirth,
+      status: record.status,
+    },
+  }
+}
+
+async function getApiError(response: Response): Promise<string> {
+  const body: unknown = await response.json()
+  if (typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string') {
+    return body.error
+  }
+  return `Request failed (${response.status}).`
+}
+
+async function fetchAthletes(): Promise<Athlete[]> {
+  const response = await fetch('/api/athletes')
+  if (!response.ok) {
+    throw new Error(await getApiError(response))
+  }
+  const records = await response.json() as ApiAthlete[]
+  return records.map(mapApiAthlete)
+}
+
 const sessions = [
   { time: '09:00', title: 'Speed & acceleration', group: 'U18 squad · Pitch 2', icon: Zap },
   { time: '11:30', title: 'Strength foundations', group: 'U16 squad · Gym', icon: Dumbbell },
@@ -60,6 +108,10 @@ function App() {
   const [athletes, setAthletes] = useState<Athlete[]>([])
   const [loadingAthletes, setLoadingAthletes] = useState(true)
   const [athleteError, setAthleteError] = useState('')
+  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null)
+  const [savingAthlete, setSavingAthlete] = useState(false)
+  const [athleteMutationError, setAthleteMutationError] = useState('')
+  const [dashboardRefresh, setDashboardRefresh] = useState(0)
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null)
   const [performanceTrend, setPerformanceTrend] = useState<PerformancePoint[]>([])
   const [upcomingSessions, setUpcomingSessions] = useState<ApiUpcomingSession[]>([])
@@ -72,24 +124,9 @@ function App() {
 
     async function loadAthletes() {
       try {
-        const response = await fetch('/api/athletes', { signal: controller.signal })
-        if (!response.ok) {
-          throw new Error(`Request failed (${response.status}).`)
-        }
-        const records = await response.json() as ApiAthlete[]
-        setAthletes(records.map((record, index) => {
-          const initials = `${record.firstName.charAt(0)}${record.lastName.charAt(0)}`.toUpperCase()
-          return {
-            id: record.id,
-            name: `${record.firstName} ${record.lastName}`,
-            initials,
-            group: `${record.group} · ${record.position ?? record.sport}`,
-            score: record.latestAssessment?.overallScore ?? 0,
-            change: '—',
-            focus: record.latestAssessment?.metrics[0]?.name ?? 'Assessment needed',
-            tone: athleteTones[index % athleteTones.length],
-          }
-        }))
+        const records = await fetchAthletes()
+        if (controller.signal.aborted) return
+        setAthletes(records)
         setAthleteError('')
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -144,7 +181,7 @@ function App() {
 
     void loadDashboard()
     return () => controller.abort()
-  }, [period])
+  }, [period, dashboardRefresh])
 
   function showToast(message: string) {
     setToast(message)
@@ -154,6 +191,52 @@ function App() {
   function openAthlete(athlete: Athlete) {
     setSelectedAthlete(athlete)
     setActiveView('athletes')
+  }
+
+  async function updateAthlete(athlete: Athlete, fields: AthleteUpdate) {
+    setSavingAthlete(true)
+    setAthleteMutationError('')
+    try {
+      const response = await fetch(`/api/athletes/${athlete.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      })
+      if (!response.ok) {
+        throw new Error(await getApiError(response))
+      }
+
+      const updatedRecord = await response.json() as ApiAthlete
+      const updatedAthlete = mapApiAthlete({ ...updatedRecord, latestAssessment: null }, Math.max(0, athletes.findIndex((item) => item.id === athlete.id)))
+      setAthletes((current) => current.map((item) => item.id === athlete.id ? { ...updatedAthlete, score: item.score, focus: item.focus } : item))
+      setSelectedAthlete((current) => current?.id === athlete.id ? { ...updatedAthlete, score: current.score, focus: current.focus } : current)
+      setEditingAthlete(null)
+      showToast(`${updatedAthlete.name}’s profile was updated.`)
+    } catch (error) {
+      setAthleteMutationError(error instanceof Error ? error.message : 'Unable to update athlete.')
+    } finally {
+      setSavingAthlete(false)
+    }
+  }
+
+  async function deleteAthlete(athlete: Athlete) {
+    if (!window.confirm(`Delete ${athlete.name}? This action cannot be undone.`)) return
+
+    setAthleteMutationError('')
+    try {
+      const response = await fetch(`/api/athletes/${athlete.id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        throw new Error(await getApiError(response))
+      }
+
+      setAthletes((current) => current.filter((item) => item.id !== athlete.id))
+      setSelectedAthlete((current) => current?.id === athlete.id ? null : current)
+      setLoadingDashboard(true)
+      setDashboardRefresh((current) => current + 1)
+      showToast(`${athlete.name} was deleted.`)
+    } catch (error) {
+      setAthleteMutationError(error instanceof Error ? error.message : 'Unable to delete athlete.')
+    }
   }
 
   return (
@@ -177,27 +260,29 @@ function App() {
               <p className="page-subtitle">{selectedAthlete ? `${selectedAthlete.group} · Individual development profile` : copy.subtitle}</p>
             </div>
             <div className="heading-actions">
-              {activeView === 'overview' && <label className="period-control"><CalendarDays size={15} /><select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Reporting period"><option>This week</option><option>This month</option><option>This quarter</option></select></label>}
+              {activeView === 'overview' && <label className="period-control"><CalendarDays size={15} /><select value={period} onChange={(event) => { setLoadingDashboard(true); setPeriod(event.target.value) }} aria-label="Reporting period"><option>This week</option><option>This month</option><option>This quarter</option></select></label>}
               <button className="secondary-button" type="button" onClick={() => showToast('Your performance report is ready.')}><Download size={15} /> Export</button>
             </div>
           </div>
 
           {loadingAthletes && <p role="status">Loading athlete data…</p>}
           {athleteError && <p className="api-error" role="alert">Unable to load athletes: {athleteError}</p>}
+          {athleteMutationError && !editingAthlete && <p className="api-error" role="alert">{athleteMutationError}</p>}
           {loadingDashboard && <p role="status">Loading dashboard data…</p>}
           {dashboardError && <p className="api-error" role="alert">Unable to load dashboard data: {dashboardError}</p>}
-          {activeView === 'overview' && <Overview period={period} athletes={athletes} summary={dashboardSummary} trend={performanceTrend} sessions={upcomingSessions} onAthleteSelect={openAthlete} onPlan={() => { setActiveView('training'); showToast('Training view opened.') }} />}
-          {activeView === 'athletes' && <AthleteView athletes={athletes} selectedAthlete={selectedAthlete} onAthleteSelect={openAthlete} />}
+          {activeView === 'overview' && <Overview period={period} athletes={athletes} summary={dashboardSummary} trend={performanceTrend} sessions={upcomingSessions} onAthleteSelect={openAthlete} onAthleteEdit={setEditingAthlete} onAthleteDelete={deleteAthlete} onPlan={() => { setActiveView('training'); showToast('Training view opened.') }} />}
+          {activeView === 'athletes' && <AthleteView athletes={athletes} selectedAthlete={selectedAthlete} onAthleteSelect={openAthlete} onAthleteEdit={setEditingAthlete} onAthleteDelete={deleteAthlete} />}
           {activeView === 'training' && <TrainingView onCreate={() => showToast('A new session draft is ready.')} />}
           {activeView === 'insights' && <InsightsView athletes={athletes} trend={performanceTrend} onAthleteSelect={openAthlete} />}
         </div>
       </main>
       {toast && <div className="toast-message" role="status">{toast}</div>}
+      {editingAthlete && <AthleteEditor athlete={editingAthlete} saving={savingAthlete} error={athleteMutationError} onSave={(fields) => void updateAthlete(editingAthlete, fields)} onCancel={() => { setEditingAthlete(null); setAthleteMutationError('') }} />}
     </div>
   )
 }
 
-function Overview({ period, athletes, summary, trend, sessions, onAthleteSelect, onPlan }: { period: string; athletes: Athlete[]; summary: DashboardSummary | null; trend: PerformancePoint[]; sessions: ApiUpcomingSession[]; onAthleteSelect: (athlete: Athlete) => void; onPlan: () => void }) {
+function Overview({ period, athletes, summary, trend, sessions, onAthleteSelect, onAthleteEdit, onAthleteDelete, onPlan }: { period: string; athletes: Athlete[]; summary: DashboardSummary | null; trend: PerformancePoint[]; sessions: ApiUpcomingSession[]; onAthleteSelect: (athlete: Athlete) => void; onAthleteEdit: (athlete: Athlete) => void; onAthleteDelete: (athlete: Athlete) => void; onPlan: () => void }) {
   return (
     <>
       <section className="metric-grid" aria-label="Squad summary">
@@ -220,7 +305,7 @@ function Overview({ period, athletes, summary, trend, sessions, onAthleteSelect,
             <div><h2>Athletes to watch</h2><p>Recent progress and coaching focus</p></div>
             <button className="text-button" type="button" onClick={() => athletes[0] && onAthleteSelect(athletes[0])}>View roster <ChevronRight size={15} /></button>
           </div>
-          <AthleteTable athletes={athletes.slice(0, 3)} onSelect={onAthleteSelect} />
+          <AthleteTable athletes={athletes.slice(0, 3)} onSelect={onAthleteSelect} onEdit={onAthleteEdit} onDelete={onAthleteDelete} />
         </div>
         <div className="panel schedule-panel">
           <div className="panel-heading"><div><h2>Upcoming sessions</h2><p>Next scheduled training sessions</p></div><button className="icon-button" type="button" aria-label="Create a session" title="Create a session" onClick={onPlan}><Plus size={17} /></button></div>
@@ -231,11 +316,11 @@ function Overview({ period, athletes, summary, trend, sessions, onAthleteSelect,
   )
 }
 
-function AthleteView({ athletes, selectedAthlete, onAthleteSelect }: { athletes: Athlete[]; selectedAthlete: Athlete | null; onAthleteSelect: (athlete: Athlete) => void }) {
+function AthleteView({ athletes, selectedAthlete, onAthleteSelect, onAthleteEdit, onAthleteDelete }: { athletes: Athlete[]; selectedAthlete: Athlete | null; onAthleteSelect: (athlete: Athlete) => void; onAthleteEdit: (athlete: Athlete) => void; onAthleteDelete: (athlete: Athlete) => void }) {
   return (
     <section className="panel full-panel">
       <div className="panel-heading"><div><h2>Squad roster</h2><p>Select an athlete to review their current development focus.</p></div><span className="roster-count">{athletes.length} athletes</span></div>
-      <AthleteTable athletes={athletes} onSelect={onAthleteSelect} selectedId={selectedAthlete?.id} />
+      <AthleteTable athletes={athletes} onSelect={onAthleteSelect} onEdit={onAthleteEdit} onDelete={onAthleteDelete} selectedId={selectedAthlete?.id} />
       {selectedAthlete && <div className="selected-note"><strong>{selectedAthlete.focus} focus</strong><span>Recommended next step: review recent assessments and add a focused block to the next training plan.</span></div>}
     </section>
   )

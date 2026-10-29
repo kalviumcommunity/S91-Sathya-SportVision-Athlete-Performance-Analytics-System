@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, ChevronRight } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 
 export interface Athlete {
   id: string
@@ -9,27 +9,39 @@ export interface Athlete {
   change: string
   focus: string
   tone: 'mint' | 'peach' | 'lilac' | 'yellow'
+  details: {
+    firstName: string
+    lastName: string
+    sport: string
+    group: string
+    position?: string
+    dateOfBirth?: string | null
+    status: 'active' | 'inactive'
+  }
 }
 
 interface AthleteTableProps {
   athletes: Athlete[]
   onSelect: (athlete: Athlete) => void
+  onEdit: (athlete: Athlete) => void
+  onDelete: (athlete: Athlete) => void
   selectedId?: string
 }
 
-export function AthleteTable({ athletes, onSelect, selectedId }: AthleteTableProps) {
+export function AthleteTable({ athletes, onSelect, onEdit, onDelete, selectedId }: AthleteTableProps) {
   return (
     <div className="table-scroll">
       <table className="athlete-table">
-        <thead><tr><th scope="col">Athlete</th><th scope="col">Performance</th><th scope="col">Change</th><th scope="col">Focus</th><th scope="col"><span className="visually-hidden">Open profile</span></th></tr></thead>
+        <thead><tr><th scope="col">Athlete</th><th scope="col">Performance</th><th scope="col">Change</th><th scope="col">Focus</th><th scope="col"><span className="visually-hidden">Athlete actions</span></th><th scope="col"><span className="visually-hidden">Open profile</span></th></tr></thead>
         <tbody>{athletes.map((athlete) => <tr key={athlete.id} className={selectedId === athlete.id ? 'selected-row' : ''}>
           <td><button className="athlete-identity" type="button" onClick={() => onSelect(athlete)}><span className={`athlete-avatar ${athlete.tone}`}>{athlete.initials}</span><span className="athlete-name"><strong>{athlete.name}</strong><small>{athlete.group}</small></span></button></td>
           <td><span className="score-number">{athlete.score}</span><span className="score-total"> / 100</span></td>
           <td><span className={`change-value ${athlete.change.startsWith('−') ? 'change-down' : ''}`}>{athlete.change.startsWith('−') ? <ArrowDownRight size={14} /> : athlete.change.startsWith('+') ? <ArrowUpRight size={14} /> : null}{athlete.change}</span></td>
           <td><span className="focus-pill">{athlete.focus}</span></td>
+          <td><div className="row-actions"><button className="row-action" type="button" aria-label={`Edit ${athlete.name}`} title={`Edit ${athlete.name}`} onClick={() => onEdit(athlete)}><Pencil size={14} /></button><button className="row-action row-action-delete" type="button" aria-label={`Delete ${athlete.name}`} title={`Delete ${athlete.name}`} onClick={() => onDelete(athlete)}><Trash2 size={14} /></button></div></td>
           <td><button className="row-action" type="button" aria-label={`Open ${athlete.name} profile`} onClick={() => onSelect(athlete)}><ChevronRight size={17} /></button></td>
         </tr>)}
-          {athletes.length === 0 && <tr><td colSpan={5}>No athletes are stored in the database yet.</td></tr>}
+          {athletes.length === 0 && <tr><td colSpan={6}>No athletes are stored in the database yet.</td></tr>}
         </tbody>
       </table>
     </div>
