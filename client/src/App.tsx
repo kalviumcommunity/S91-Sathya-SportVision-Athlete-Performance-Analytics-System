@@ -7,6 +7,7 @@ import { CoachInsight } from './components/CoachInsight'
 import { MetricCard } from './components/MetricCard'
 import { PerformanceChart, type PerformancePoint } from './components/PerformanceChart'
 import { Sidebar, type AppView } from './components/Sidebar'
+import { getApiError } from './api'
 import './App.css'
 
 interface ApiAthlete {
@@ -69,14 +70,6 @@ function mapApiAthlete(record: ApiAthlete, index: number): Athlete {
       status: record.status,
     },
   }
-}
-
-async function getApiError(response: Response): Promise<string> {
-  const body: unknown = await response.json()
-  if (typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string') {
-    return body.error
-  }
-  return `Request failed (${response.status}).`
 }
 
 async function fetchAthletes(): Promise<Athlete[]> {
