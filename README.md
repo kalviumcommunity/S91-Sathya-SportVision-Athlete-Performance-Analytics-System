@@ -58,8 +58,9 @@ The Vite development server proxies `/api` requests to `http://localhost:3000`. 
 | Athletes | `GET /api/athletes`, `GET /api/athletes/:id`, `POST /api/athletes`, `PATCH /api/athletes/:id`, `DELETE /api/athletes/:id` |
 | Assessments | `GET /api/assessments`, `GET /api/assessments/:id`, `POST /api/assessments`, `PATCH /api/assessments/:id`, `DELETE /api/assessments/:id` |
 | Training sessions | `GET /api/training-sessions`, `GET /api/training-sessions/:id`, `POST /api/training-sessions`, `PATCH /api/training-sessions/:id`, `DELETE /api/training-sessions/:id` |
+| Dashboard | `GET /api/dashboard/summary?period=week\|month\|quarter`, `GET /api/dashboard/performance-trend`, `GET /api/dashboard/upcoming-sessions?limit=5` |
 
-Assessment and training-session lists can be queried from MongoDB and include populated athlete records; assessment lists also accept an optional `?athlete=<id>` filter. `GET /api/health` reports API/database readiness. Writes validate fields against the existing Mongoose schemas, and athlete deletion is rejected while records still reference that athlete.
+Dashboard summary counts and average scores are calculated from MongoDB; the average uses each athlete's latest assessment in the requested period. The performance-trend endpoint returns eight UTC weeks of assessment averages, including empty weeks. Upcoming sessions are planned sessions ordered by schedule and can be limited to 1–20 results. Assessment and training-session lists can be queried from MongoDB and include populated athlete records; assessment lists also accept an optional `?athlete=<id>` filter. `GET /api/health` reports API/database readiness. Writes validate fields against the existing Mongoose schemas, and athlete deletion is rejected while records still reference that athlete.
 
 Example athlete creation:
 

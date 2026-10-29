@@ -3,7 +3,7 @@ import { Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronRigh
 import { AthleteTable, type Athlete } from './components/AthleteTable'
 import { CoachInsight } from './components/CoachInsight'
 import { MetricCard } from './components/MetricCard'
-import { PerformanceChart } from './components/PerformanceChart'
+import { PerformanceChart, type PerformancePoint } from './components/PerformanceChart'
 import { Sidebar, type AppView } from './components/Sidebar'
 import './App.css'
 
@@ -18,6 +18,23 @@ interface ApiAthlete {
     overallScore: number
     metrics: { name: string }[]
   } | null
+}
+
+interface DashboardSummary {
+  period: string
+  totalAthletes: number
+  activeAthletes: number
+  averagePerformance: number | null
+  completedSessions: number
+  plannedSessions: number
+}
+
+interface ApiUpcomingSession {
+  _id: string
+  title: string
+  scheduledAt: string
+  durationMinutes: number
+  athletes: { firstName: string; lastName: string; group: string }[]
 }
 
 const athleteTones: Athlete['tone'][] = ['mint', 'peach', 'lilac', 'yellow']
@@ -43,6 +60,11 @@ function App() {
   const [athletes, setAthletes] = useState<Athlete[]>([])
   const [loadingAthletes, setLoadingAthletes] = useState(true)
   const [athleteError, setAthleteError] = useState('')
+  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null)
+  const [performanceTrend, setPerformanceTrend] = useState<PerformancePoint[]>([])
+  const [upcomingSessions, setUpcomingSessions] = useState<ApiUpcomingSession[]>([])
+  const [loadingDashboard, setLoadingDashboard] = useState(true)
+  const [dashboardError, setDashboardError] = useState('')
   const copy = viewCopy[activeView]
 
   useEffect(() => {
@@ -84,6 +106,46 @@ function App() {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    const periodKey = period === 'This week' ? 'week' : period === 'This quarter' ? 'quarter' : 'month'
+
+    async function loadDashboard() {
+      try {
+        const [summaryResponse, trendResponse, sessionsResponse] = await Promise.all([
+          fetch(`/api/dashboard/summary?period=${periodKey}`, { signal: controller.signal }),
+          fetch('/api/dashboard/performance-trend', { signal: controller.signal }),
+          fetch('/api/dashboard/upcoming-sessions', { signal: controller.signal }),
+        ])
+        const failedResponse = [summaryResponse, trendResponse, sessionsResponse].find((response) => !response.ok)
+        if (failedResponse) {
+          throw new Error(`Request failed (${failedResponse.status}).`)
+        }
+
+        const [summary, trend, sessions] = await Promise.all([
+          summaryResponse.json() as Promise<DashboardSummary>,
+          trendResponse.json() as Promise<PerformancePoint[]>,
+          sessionsResponse.json() as Promise<ApiUpcomingSession[]>,
+        ])
+        setDashboardSummary(summary)
+        setPerformanceTrend(trend)
+        setUpcomingSessions(sessions)
+        setDashboardError('')
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setDashboardError(error instanceof Error ? error.message : 'Unknown error.')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoadingDashboard(false)
+        }
+      }
+    }
+
+    void loadDashboard()
+    return () => controller.abort()
+  }, [period])
+
   function showToast(message: string) {
     setToast(message)
     window.setTimeout(() => setToast(''), 2600)
@@ -122,10 +184,12 @@ function App() {
 
           {loadingAthletes && <p role="status">Loading athlete data…</p>}
           {athleteError && <p className="api-error" role="alert">Unable to load athletes: {athleteError}</p>}
-          {activeView === 'overview' && <Overview period={period} athletes={athletes} onAthleteSelect={openAthlete} onPlan={() => { setActiveView('training'); showToast('Training view opened.') }} />}
+          {loadingDashboard && <p role="status">Loading dashboard data…</p>}
+          {dashboardError && <p className="api-error" role="alert">Unable to load dashboard data: {dashboardError}</p>}
+          {activeView === 'overview' && <Overview period={period} athletes={athletes} summary={dashboardSummary} trend={performanceTrend} sessions={upcomingSessions} onAthleteSelect={openAthlete} onPlan={() => { setActiveView('training'); showToast('Training view opened.') }} />}
           {activeView === 'athletes' && <AthleteView athletes={athletes} selectedAthlete={selectedAthlete} onAthleteSelect={openAthlete} />}
           {activeView === 'training' && <TrainingView onCreate={() => showToast('A new session draft is ready.')} />}
-          {activeView === 'insights' && <InsightsView athletes={athletes} onAthleteSelect={openAthlete} />}
+          {activeView === 'insights' && <InsightsView athletes={athletes} trend={performanceTrend} onAthleteSelect={openAthlete} />}
         </div>
       </main>
       {toast && <div className="toast-message" role="status">{toast}</div>}
@@ -133,22 +197,18 @@ function App() {
   )
 }
 
-function Overview({ period, athletes, onAthleteSelect, onPlan }: { period: string; athletes: Athlete[]; onAthleteSelect: (athlete: Athlete) => void; onPlan: () => void }) {
-  const averageScore = athletes.length
-    ? Math.round(athletes.reduce((total, athlete) => total + athlete.score, 0) / athletes.length)
-    : 0
-
+function Overview({ period, athletes, summary, trend, sessions, onAthleteSelect, onPlan }: { period: string; athletes: Athlete[]; summary: DashboardSummary | null; trend: PerformancePoint[]; sessions: ApiUpcomingSession[]; onAthleteSelect: (athlete: Athlete) => void; onPlan: () => void }) {
   return (
     <>
       <section className="metric-grid" aria-label="Squad summary">
-        <MetricCard label="Athletes" value={`${athletes.length}`} note="Loaded from MongoDB" icon={<Users size={17} />} />
-        <MetricCard label={`Average performance · ${period.toLowerCase()}`} value={`${averageScore}`} suffix="/100" note="Based on latest saved assessments" icon={<Activity size={17} />} trend="positive" />
-        <MetricCard label="Sessions completed" value="18" note="Of 22 scheduled" icon={<ClipboardList size={17} />} />
-        <MetricCard label="Needs attention" value="3" note="2 recovery · 1 plateau" icon={<ArrowDownRight size={17} />} trend="caution" />
+        <MetricCard label="Active athletes" value={`${summary?.activeAthletes ?? '—'}`} note={`${summary?.totalAthletes ?? '—'} total athletes`} icon={<Users size={17} />} />
+        <MetricCard label={`Average performance · ${period.toLowerCase()}`} value={summary?.averagePerformance === null || summary?.averagePerformance === undefined ? '—' : `${Math.round(summary.averagePerformance)}`} suffix="/100" note="Latest assessment per athlete" icon={<Activity size={17} />} trend="positive" />
+        <MetricCard label="Sessions completed" value={`${summary?.completedSessions ?? '—'}`} note="Sessions recorded in the database" icon={<ClipboardList size={17} />} />
+        <MetricCard label="Sessions planned" value={`${summary?.plannedSessions ?? '—'}`} note="Scheduled training sessions" icon={<ArrowDownRight size={17} />} trend="caution" />
       </section>
 
       <section className="overview-grid">
-        <PerformanceChart />
+        <PerformanceChart points={trend} />
         {athletes[0]
           ? <CoachInsight athlete={athletes[0]} onAction={onPlan} />
           : <div className="insight-panel"><h2>No athletes in the database yet</h2><p>Add an athlete and assessment through the API to see coaching insights here.</p></div>}
@@ -163,8 +223,8 @@ function Overview({ period, athletes, onAthleteSelect, onPlan }: { period: strin
           <AthleteTable athletes={athletes.slice(0, 3)} onSelect={onAthleteSelect} />
         </div>
         <div className="panel schedule-panel">
-          <div className="panel-heading"><div><h2>Today’s sessions</h2><p>Monday · 16 February</p></div><button className="icon-button" type="button" aria-label="Create a session" title="Create a session" onClick={onPlan}><Plus size={17} /></button></div>
-          <SessionList />
+          <div className="panel-heading"><div><h2>Upcoming sessions</h2><p>Next scheduled training sessions</p></div><button className="icon-button" type="button" aria-label="Create a session" title="Create a session" onClick={onPlan}><Plus size={17} /></button></div>
+          <SessionList sessions={sessions} />
         </div>
       </section>
     </>
@@ -192,7 +252,7 @@ function TrainingView({ onCreate }: { onCreate: () => void }) {
   )
 }
 
-function InsightsView({ athletes, onAthleteSelect }: { athletes: Athlete[]; onAthleteSelect: (athlete: Athlete) => void }) {
+function InsightsView({ athletes, trend, onAthleteSelect }: { athletes: Athlete[]; trend: PerformancePoint[]; onAthleteSelect: (athlete: Athlete) => void }) {
   return (
     <>
       <section className="metric-grid insight-metrics">
@@ -201,13 +261,21 @@ function InsightsView({ athletes, onAthleteSelect }: { athletes: Athlete[]; onAt
         <MetricCard label="Coaching opportunity" value="Recovery" note="3 athletes flagged for check-in" icon={<CircleHelp size={17} />} trend="caution" />
         <MetricCard label="Assessments this month" value="38" note="Across 3 age groups" icon={<ClipboardList size={17} />} />
       </section>
-      <div className="overview-grid insights-lower"><PerformanceChart /><div className="panel focus-panel"><div className="panel-heading"><div><h2>Development opportunities</h2><p>Suggested follow-ups</p></div></div>{athletes.slice(0, 3).map((athlete) => <button className="focus-row" type="button" key={athlete.id} onClick={() => onAthleteSelect(athlete)}><span className={`athlete-avatar ${athlete.tone}`}>{athlete.initials}</span><span className="focus-name"><strong>{athlete.name}</strong><small>{athlete.focus} focus</small></span><ChevronRight size={16} /></button>)}</div></div>
+      <div className="overview-grid insights-lower"><PerformanceChart points={trend} /><div className="panel focus-panel"><div className="panel-heading"><div><h2>Development opportunities</h2><p>Suggested follow-ups</p></div></div>{athletes.slice(0, 3).map((athlete) => <button className="focus-row" type="button" key={athlete.id} onClick={() => onAthleteSelect(athlete)}><span className={`athlete-avatar ${athlete.tone}`}>{athlete.initials}</span><span className="focus-name"><strong>{athlete.name}</strong><small>{athlete.focus} focus</small></span><ChevronRight size={16} /></button>)}</div></div>
     </>
   )
 }
 
-function SessionList() {
-  return <div className="session-list">{sessions.map(({ time, title, group, icon: Icon }) => <div className="session-row" key={title}><span className="session-clock">{time}</span><span className="session-type"><Icon size={15} /><span><strong>{title}</strong><small>{group}</small></span></span></div>)}</div>
+function SessionList({ sessions }: { sessions: ApiUpcomingSession[] }) {
+  return <div className="session-list">{sessions.length > 0
+    ? sessions.map((session) => {
+      const scheduledAt = new Date(session.scheduledAt)
+      const time = scheduledAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+      const groups = [...new Set(session.athletes.map((athlete) => athlete.group))]
+      const groupLabel = `${session.athletes.length} athletes · ${groups.join(', ')}`
+      return <div className="session-row" key={session._id}><span className="session-clock">{time}</span><span className="session-type"><Activity size={15} /><span><strong>{session.title}</strong><small>{groupLabel} · {session.durationMinutes} min</small></span></span></div>
+    })
+    : <p className="session-empty">No upcoming sessions are scheduled.</p>}</div>
 }
 
 export default App
