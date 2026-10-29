@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronRight, CircleHelp, ClipboardList, Download, Plus, Search, Users, Zap, Dumbbell } from 'lucide-react'
 import { AthleteTable, type Athlete } from './components/AthleteTable'
 import { CoachInsight } from './components/CoachInsight'
@@ -7,12 +7,20 @@ import { PerformanceChart } from './components/PerformanceChart'
 import { Sidebar, type AppView } from './components/Sidebar'
 import './App.css'
 
-const athletes: Athlete[] = [
-  { id: 'maya', name: 'Maya Chen', initials: 'MC', group: 'U18 · Midfielder', score: 86, change: '+8%', focus: 'Acceleration', tone: 'mint' },
-  { id: 'leo', name: 'Leo Martins', initials: 'LM', group: 'U18 · Forward', score: 79, change: '+3%', focus: 'Recovery', tone: 'peach' },
-  { id: 'amara', name: 'Amara Okafor', initials: 'AO', group: 'U16 · Defender', score: 83, change: '+6%', focus: 'Strength', tone: 'lilac' },
-  { id: 'noah', name: 'Noah Patel', initials: 'NP', group: 'U18 · Goalkeeper', score: 74, change: '−2%', focus: 'Agility', tone: 'yellow' },
-]
+interface ApiAthlete {
+  id: string
+  firstName: string
+  lastName: string
+  sport: string
+  group: string
+  position?: string
+  latestAssessment: {
+    overallScore: number
+    metrics: { name: string }[]
+  } | null
+}
+
+const athleteTones: Athlete['tone'][] = ['mint', 'peach', 'lilac', 'yellow']
 
 const sessions = [
   { time: '09:00', title: 'Speed & acceleration', group: 'U18 squad · Pitch 2', icon: Zap },
@@ -32,7 +40,49 @@ function App() {
   const [period, setPeriod] = useState('This month')
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null)
   const [toast, setToast] = useState('')
+  const [athletes, setAthletes] = useState<Athlete[]>([])
+  const [loadingAthletes, setLoadingAthletes] = useState(true)
+  const [athleteError, setAthleteError] = useState('')
   const copy = viewCopy[activeView]
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadAthletes() {
+      try {
+        const response = await fetch('/api/athletes', { signal: controller.signal })
+        if (!response.ok) {
+          throw new Error(`Request failed (${response.status}).`)
+        }
+        const records = await response.json() as ApiAthlete[]
+        setAthletes(records.map((record, index) => {
+          const initials = `${record.firstName.charAt(0)}${record.lastName.charAt(0)}`.toUpperCase()
+          return {
+            id: record.id,
+            name: `${record.firstName} ${record.lastName}`,
+            initials,
+            group: `${record.group} · ${record.position ?? record.sport}`,
+            score: record.latestAssessment?.overallScore ?? 0,
+            change: '—',
+            focus: record.latestAssessment?.metrics[0]?.name ?? 'Assessment needed',
+            tone: athleteTones[index % athleteTones.length],
+          }
+        }))
+        setAthleteError('')
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setAthleteError(error instanceof Error ? error.message : 'Unknown error.')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoadingAthletes(false)
+        }
+      }
+    }
+
+    void loadAthletes()
+    return () => controller.abort()
+  }, [])
 
   function showToast(message: string) {
     setToast(message)
@@ -70,10 +120,12 @@ function App() {
             </div>
           </div>
 
-          {activeView === 'overview' && <Overview period={period} onAthleteSelect={openAthlete} onPlan={() => { setActiveView('training'); showToast('Maya’s acceleration focus was added to training.') }} />}
-          {activeView === 'athletes' && <AthleteView selectedAthlete={selectedAthlete} onAthleteSelect={openAthlete} />}
+          {loadingAthletes && <p role="status">Loading athlete data…</p>}
+          {athleteError && <p className="api-error" role="alert">Unable to load athletes: {athleteError}</p>}
+          {activeView === 'overview' && <Overview period={period} athletes={athletes} onAthleteSelect={openAthlete} onPlan={() => { setActiveView('training'); showToast('Training view opened.') }} />}
+          {activeView === 'athletes' && <AthleteView athletes={athletes} selectedAthlete={selectedAthlete} onAthleteSelect={openAthlete} />}
           {activeView === 'training' && <TrainingView onCreate={() => showToast('A new session draft is ready.')} />}
-          {activeView === 'insights' && <InsightsView onAthleteSelect={openAthlete} />}
+          {activeView === 'insights' && <InsightsView athletes={athletes} onAthleteSelect={openAthlete} />}
         </div>
       </main>
       {toast && <div className="toast-message" role="status">{toast}</div>}
@@ -81,28 +133,32 @@ function App() {
   )
 }
 
-function Overview({ period, onAthleteSelect, onPlan }: { period: string; onAthleteSelect: (athlete: Athlete) => void; onPlan: () => void }) {
-  const score = period === 'This week' ? 79 : period === 'This quarter' ? 84 : 81
+function Overview({ period, athletes, onAthleteSelect, onPlan }: { period: string; athletes: Athlete[]; onAthleteSelect: (athlete: Athlete) => void; onPlan: () => void }) {
+  const averageScore = athletes.length
+    ? Math.round(athletes.reduce((total, athlete) => total + athlete.score, 0) / athletes.length)
+    : 0
 
   return (
     <>
       <section className="metric-grid" aria-label="Squad summary">
-        <MetricCard label="Active athletes" value="24" note="Across 3 age groups" icon={<Users size={17} />} />
-        <MetricCard label="Average performance" value={`${score}`} suffix="/100" note="↑ 5.2% vs previous period" icon={<Activity size={17} />} trend="positive" />
+        <MetricCard label="Athletes" value={`${athletes.length}`} note="Loaded from MongoDB" icon={<Users size={17} />} />
+        <MetricCard label={`Average performance · ${period.toLowerCase()}`} value={`${averageScore}`} suffix="/100" note="Based on latest saved assessments" icon={<Activity size={17} />} trend="positive" />
         <MetricCard label="Sessions completed" value="18" note="Of 22 scheduled" icon={<ClipboardList size={17} />} />
         <MetricCard label="Needs attention" value="3" note="2 recovery · 1 plateau" icon={<ArrowDownRight size={17} />} trend="caution" />
       </section>
 
       <section className="overview-grid">
         <PerformanceChart />
-        <CoachInsight athlete={athletes[0]} onAction={onPlan} />
+        {athletes[0]
+          ? <CoachInsight athlete={athletes[0]} onAction={onPlan} />
+          : <div className="insight-panel"><h2>No athletes in the database yet</h2><p>Add an athlete and assessment through the API to see coaching insights here.</p></div>}
       </section>
 
       <section className="lower-grid">
         <div className="panel roster-panel">
           <div className="panel-heading">
             <div><h2>Athletes to watch</h2><p>Recent progress and coaching focus</p></div>
-            <button className="text-button" type="button" onClick={() => onAthleteSelect(athletes[0])}>View roster <ChevronRight size={15} /></button>
+            <button className="text-button" type="button" onClick={() => athletes[0] && onAthleteSelect(athletes[0])}>View roster <ChevronRight size={15} /></button>
           </div>
           <AthleteTable athletes={athletes.slice(0, 3)} onSelect={onAthleteSelect} />
         </div>
@@ -115,10 +171,10 @@ function Overview({ period, onAthleteSelect, onPlan }: { period: string; onAthle
   )
 }
 
-function AthleteView({ selectedAthlete, onAthleteSelect }: { selectedAthlete: Athlete | null; onAthleteSelect: (athlete: Athlete) => void }) {
+function AthleteView({ athletes, selectedAthlete, onAthleteSelect }: { athletes: Athlete[]; selectedAthlete: Athlete | null; onAthleteSelect: (athlete: Athlete) => void }) {
   return (
     <section className="panel full-panel">
-      <div className="panel-heading"><div><h2>Squad roster</h2><p>Select an athlete to review their current development focus.</p></div><span className="roster-count">24 athletes</span></div>
+      <div className="panel-heading"><div><h2>Squad roster</h2><p>Select an athlete to review their current development focus.</p></div><span className="roster-count">{athletes.length} athletes</span></div>
       <AthleteTable athletes={athletes} onSelect={onAthleteSelect} selectedId={selectedAthlete?.id} />
       {selectedAthlete && <div className="selected-note"><strong>{selectedAthlete.focus} focus</strong><span>Recommended next step: review recent assessments and add a focused block to the next training plan.</span></div>}
     </section>
@@ -136,7 +192,7 @@ function TrainingView({ onCreate }: { onCreate: () => void }) {
   )
 }
 
-function InsightsView({ onAthleteSelect }: { onAthleteSelect: (athlete: Athlete) => void }) {
+function InsightsView({ athletes, onAthleteSelect }: { athletes: Athlete[]; onAthleteSelect: (athlete: Athlete) => void }) {
   return (
     <>
       <section className="metric-grid insight-metrics">
