@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import mongoose from 'mongoose'
-import { app } from './app.js'
+import { createApp } from './app.js'
 
 const port = Number(process.env.PORT ?? 3000)
 const mongoUri = process.env.MONGODB_URI
@@ -11,6 +11,8 @@ if (!mongoUri) {
 
 await mongoose.connect(mongoUri)
 console.log('Connected to MongoDB.')
+
+const app = createApp()
 
 app.listen(port, () => {
   console.log(`SportVision API listening on port ${port}.`)

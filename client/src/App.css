@@ -150,6 +150,22 @@ h1 { margin-bottom: 5px; font: 600 27px 'Space Grotesk', sans-serif; }
 .focus-name small { margin-top: 3px; color: var(--muted); font-size: 9px; }
 .focus-row > svg { color: var(--muted); }
 .toast-message { position: fixed; right: 22px; bottom: 22px; z-index: 4; padding: 11px 15px; border-radius: 7px; background: var(--ink); color: white; font-size: 11px; box-shadow: 0 8px 24px #17241f2e; }
+.coach-username { max-width: 180px; overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; }
+.auth-page { display: grid; min-height: 100vh; place-items: center; padding: 24px; background: radial-gradient(ellipse at 15% 10%, #e6efe4, transparent 45%), var(--paper); }
+.auth-card { width: min(420px, 100%); padding: 32px; border: 1px solid var(--line); border-radius: 14px; background: white; box-shadow: 0 18px 55px #17241f12; }
+.auth-brand { padding: 0 0 28px; color: var(--green-deep); }
+.auth-card .eyebrow { margin-bottom: 8px; }
+.auth-card h1 { margin-bottom: 7px; font-size: 25px; }
+.auth-description { margin-bottom: 23px; color: var(--muted); font-size: 12px; }
+.auth-form { display: grid; gap: 8px; }
+.auth-form label { margin-top: 5px; color: #536159; font-size: 11px; font-weight: 600; }
+.auth-form input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #ccd7ce; border-radius: 6px; background: white; color: var(--ink); font-size: 13px; }
+.auth-form input:focus { outline: 2px solid #95bca4; outline-offset: 1px; }
+.auth-submit { width: 100%; min-height: 40px; margin-top: 10px; }
+.auth-submit:disabled, .auth-switch button:disabled { cursor: wait; opacity: .65; }
+.auth-switch { margin: 18px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
+.auth-switch button { padding: 0; border: 0; background: transparent; color: var(--green); font-size: inherit; font-weight: 700; cursor: pointer; }
+.auth-switch button:hover { text-decoration: underline; }
 @media (max-width: 980px) { .app-shell { grid-template-columns: 190px minmax(0, 1fr); } .overview-grid, .lower-grid { grid-template-columns: 1fr; } .session-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 680px) {
   .app-shell { display: block; padding-bottom: 65px; }
@@ -159,6 +175,7 @@ h1 { margin-bottom: 5px; font: 600 27px 'Space Grotesk', sans-serif; }
   .nav-item { flex-direction: column; justify-content: center; gap: 3px; min-height: 62px; padding: 5px 2px; border-radius: 0; font-size: 9px; }
   .nav-item.is-active::before { position: absolute; top: 0; left: 50%; width: 26px; height: 2px; margin: 0; transform: translateX(-50%); border-radius: 0 0 3px 3px; }
   .topbar { min-height: 57px; padding: 0 15px; }
+  .coach-username { max-width: 100px; }
   .breadcrumb span, .breadcrumb svg { display: none; }
   .page-content { padding: 22px 14px 31px; }
   .page-heading { align-items: flex-start; flex-direction: column; gap: 13px; }
