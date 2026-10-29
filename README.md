@@ -33,7 +33,7 @@ The initial MongoDB schemas are in `server/src/models`:
 - `Assessment` belongs to an athlete and stores a dated overall score, one or more measured metrics, and optional coach notes.
 - `TrainingSession` stores its schedule, duration, focus areas, participating athletes, and planned/completed/cancelled status.
 
-All three models enable Mongoose timestamps. Assessment history and squad/session queries have supporting indexes. To type-check the models, run `npm install` and `npm run typecheck` from `server`.
+All three models enable Mongoose timestamps. Assessments reference their athlete, and training sessions reference their participating athletes. The athlete schema exposes reverse `assessments` and `trainingSessions` virtual relationships without duplicating those references. `GET /api/athletes/:id` populates both related collections; assessments are ordered newest first, and sessions are ordered by scheduled date newest first. Assessment history and squad/session queries have supporting indexes. To type-check the models, run `npm install` and `npm run typecheck` from `server`.
 
 ## Database-backed API
 
