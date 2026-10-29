@@ -24,3 +24,47 @@ SportVision is a MERN platform for sports academies to record athlete assessment
 [Open the interactive Mock UX](https://raw.githack.com/kalviumcommunity/S91-Sathya-SportVision-Athlete-Performance-Analytics-System/feature/mock-ux-design/mock-ux.html) · [View the HTML source](mock-ux.html)
 
 This mock UX covers the coach overview, athlete roster and profiles, personalized recommendations, training plans, and academy insights. The primary journey moves from squad trends to an athlete’s development needs and a targeted training follow-up.
+
+## Mongoose Data Models
+
+The initial MongoDB schemas are in `server/src/models`:
+
+- `Athlete` stores athlete identity, sport, squad group, optional position/date of birth, and active status.
+- `Assessment` belongs to an athlete and stores a dated overall score, one or more measured metrics, and optional coach notes.
+- `TrainingSession` stores its schedule, duration, focus areas, participating athletes, and planned/completed/cancelled status.
+
+All three models enable Mongoose timestamps. Assessment history and squad/session queries have supporting indexes. To type-check the models, run `npm install` and `npm run typecheck` from `server`.
+
+## Database-backed API
+
+The Express API connects to MongoDB before it starts listening. Copy `server/.env.example` to `server/.env` and set `MONGODB_URI` to your MongoDB connection string. Set `CLIENT_ORIGIN` to the exact deployed client origin when the client and API are hosted separately; local Vite requests use a same-origin development proxy. Then run the server and client in separate terminals:
+
+```sh
+cd server
+npm install
+npm run dev
+```
+
+```sh
+cd client
+npm install
+npm run dev
+```
+
+The Vite development server proxies `/api` requests to `http://localhost:3000`. The athlete roster and its latest assessment details are loaded from MongoDB. API routes support database-backed reads and writes for athletes, assessments, and training sessions:
+
+| Resource | Routes |
+| --- | --- |
+| Athletes | `GET /api/athletes`, `GET /api/athletes/:id`, `POST /api/athletes`, `PATCH /api/athletes/:id`, `DELETE /api/athletes/:id` |
+| Assessments | `GET /api/assessments`, `GET /api/assessments/:id`, `POST /api/assessments`, `PATCH /api/assessments/:id`, `DELETE /api/assessments/:id` |
+| Training sessions | `GET /api/training-sessions`, `GET /api/training-sessions/:id`, `POST /api/training-sessions`, `PATCH /api/training-sessions/:id`, `DELETE /api/training-sessions/:id` |
+
+Assessment and training-session lists can be queried from MongoDB and include populated athlete records; assessment lists also accept an optional `?athlete=<id>` filter. `GET /api/health` reports API/database readiness. Writes validate fields against the existing Mongoose schemas, and athlete deletion is rejected while records still reference that athlete.
+
+Example athlete creation:
+
+```sh
+curl -X POST http://localhost:3000/api/athletes \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Maya","lastName":"Chen","sport":"Football","group":"U18","position":"Midfielder"}'
+```
