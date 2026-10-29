@@ -32,12 +32,13 @@ The initial MongoDB schemas are in `server/src/models`:
 - `Athlete` stores athlete identity, sport, squad group, optional position/date of birth, and active status.
 - `Assessment` belongs to an athlete and stores a dated overall score, one or more measured metrics, and optional coach notes.
 - `TrainingSession` stores its schedule, duration, focus areas, participating athletes, and planned/completed/cancelled status.
+- `User` stores a unique username and bcrypt password hash for authentication.
 
-All three models enable Mongoose timestamps. Assessments reference their athlete, and training sessions reference their participating athletes. The athlete schema exposes reverse `assessments` and `trainingSessions` virtual relationships without duplicating those references. `GET /api/athletes/:id` populates both related collections; assessments are ordered newest first, and sessions are ordered by scheduled date newest first. Assessment history and squad/session queries have supporting indexes. To type-check the models, run `npm install` and `npm run typecheck` from `server`.
+All four models enable Mongoose timestamps. Assessments reference their athlete, and training sessions reference their participating athletes. The athlete schema exposes reverse `assessments` and `trainingSessions` virtual relationships without duplicating those references. `GET /api/athletes/:id` populates both related collections; assessments are ordered newest first, and sessions are ordered by scheduled date newest first. Assessment history and squad/session queries have supporting indexes. To type-check the models, run `npm install` and `npm run typecheck` from `server`.
 
 ## Database-backed API
 
-The Express API connects to MongoDB before it starts listening. Copy `server/.env.example` to `server/.env` and set `MONGODB_URI` to your MongoDB connection string. Set `CLIENT_ORIGIN` to the exact deployed client origin when the client and API are hosted separately; local Vite requests use a same-origin development proxy. Then run the server and client in separate terminals:
+The Express API connects to MongoDB before it starts listening. Copy `server/.env.example` to `server/.env` and set `MONGODB_URI` to your MongoDB connection string. Generate a unique session secret with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` and set it as `SESSION_SECRET`. Set `CLIENT_ORIGIN` to the exact deployed client origin when the client and API are hosted separately; local Vite requests use a same-origin development proxy. Then run the server and client in separate terminals:
 
 ```sh
 cd server
@@ -55,10 +56,13 @@ The Vite development server proxies `/api` requests to `http://localhost:3000`. 
 
 | Resource | Routes |
 | --- | --- |
+| Authentication | `POST /api/auth/signup`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout` |
 | Athletes | `GET /api/athletes`, `GET /api/athletes/:id`, `POST /api/athletes`, `PATCH /api/athletes/:id`, `DELETE /api/athletes/:id` |
 | Assessments | `GET /api/assessments`, `GET /api/assessments/:id`, `POST /api/assessments`, `POST /api/athletes/:id/assessments`, `PATCH /api/assessments/:id`, `DELETE /api/assessments/:id` |
 | Training sessions | `GET /api/training-sessions`, `GET /api/training-sessions/:id`, `POST /api/training-sessions`, `PATCH /api/training-sessions/:id`, `DELETE /api/training-sessions/:id` |
 | Dashboard | `GET /api/dashboard/summary?period=week\|month\|quarter`, `GET /api/dashboard/performance-trend`, `GET /api/dashboard/upcoming-sessions?limit=5` |
+
+Public sign-up and login use a unique, case-insensitive username and a password of at least eight characters (bcrypt's maximum 72 UTF-8 bytes). Passwords are bcrypt-hashed and never returned by the API. Sign-up is limited to five attempts per address per hour and login to ten attempts per address per 15 minutes. Successful authentication creates a MongoDB-backed session with an eight-hour HttpOnly, SameSite=Lax cookie; HTTPS deployments set the cookie's Secure flag. Sign-out destroys the server-side session. All application API routes except `GET /api/health` and `/api/auth/*` require an authenticated session. Set `CLIENT_ORIGIN` for a separately hosted client so credentialed requests are accepted only from that origin; the frontend and API must be same-site for the SameSite=Lax session cookie to be sent.
 
 Dashboard summary counts and average scores are calculated from MongoDB; the average uses each athlete's latest assessment in the requested period. The performance-trend endpoint returns eight UTC weeks of assessment averages, including empty weeks. Upcoming sessions are planned sessions ordered by schedule and can be limited to 1–20 results. Assessment and training-session lists can be queried from MongoDB and include populated athlete records; assessment lists also accept an optional `?athlete=<id>` filter. The React athlete roster provides edit and delete actions backed by the athlete `PATCH` and `DELETE` endpoints. Deletion requires confirmation and reports a conflict when assessments or sessions still reference the athlete. `GET /api/health` reports API/database readiness. Writes validate fields against the existing Mongoose schemas.
 

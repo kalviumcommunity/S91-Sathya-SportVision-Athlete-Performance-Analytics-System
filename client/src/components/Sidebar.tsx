@@ -11,10 +11,11 @@ const navigation: { view: AppView; label: string; icon: LucideIcon }[] = [
 
 interface SidebarProps {
   activeView: AppView
+  username: string
   onSelect: (view: AppView) => void
 }
 
-export function Sidebar({ activeView, onSelect }: SidebarProps) {
+export function Sidebar({ activeView, username, onSelect }: SidebarProps) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#overview" onClick={(event) => { event.preventDefault(); onSelect('overview') }}>
@@ -26,7 +27,7 @@ export function Sidebar({ activeView, onSelect }: SidebarProps) {
       </nav>
       <div className="sidebar-bottom">
         <div className="season-card"><span className="season-kicker">Current season</span><strong>2025–26</strong><small>U18 Development · Week 08</small></div>
-        <div className="coach-profile"><span className="coach-avatar">JM</span><span><strong>Jordan Miller</strong><small>Performance coach</small></span><span className="coach-status" aria-label="Online" /></div>
+        <div className="coach-profile"><span className="coach-avatar">{username.slice(0, 2).toUpperCase()}</span><span><strong>{username}</strong><small>Performance coach</small></span><span className="coach-status" aria-label="Online" /></div>
       </div>
     </aside>
   )

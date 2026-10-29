@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronRight, CircleHelp, ClipboardList, Download, Plus, Search, Users, Zap, Dumbbell } from 'lucide-react'
+import { Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronRight, CircleHelp, ClipboardList, Download, LogOut, Plus, Search, Users, Zap, Dumbbell } from 'lucide-react'
 import { AthleteTable, type Athlete } from './components/AthleteTable'
 import { AthleteEditor, type AthleteUpdate } from './components/AthleteEditor'
+import { AuthScreen } from './components/AuthScreen'
 import { CoachInsight } from './components/CoachInsight'
 import { MetricCard } from './components/MetricCard'
 import { PerformanceChart, type PerformancePoint } from './components/PerformanceChart'
@@ -79,7 +80,7 @@ async function getApiError(response: Response): Promise<string> {
 }
 
 async function fetchAthletes(): Promise<Athlete[]> {
-  const response = await fetch('/api/athletes')
+  const response = await fetch('/api/athletes', { credentials: 'include' })
   if (!response.ok) {
     throw new Error(await getApiError(response))
   }
@@ -101,6 +102,10 @@ const viewCopy: Record<AppView, { title: string; subtitle: string }> = {
 }
 
 function App() {
+  const [authStatus, setAuthStatus] = useState<'checking' | 'signed_in' | 'signed_out'>('checking')
+  const [authUser, setAuthUser] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authBusy, setAuthBusy] = useState(false)
   const [activeView, setActiveView] = useState<AppView>('overview')
   const [period, setPeriod] = useState('This month')
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null)
@@ -117,9 +122,40 @@ function App() {
   const [upcomingSessions, setUpcomingSessions] = useState<ApiUpcomingSession[]>([])
   const [loadingDashboard, setLoadingDashboard] = useState(true)
   const [dashboardError, setDashboardError] = useState('')
-  const copy = viewCopy[activeView]
+  const copy = activeView === 'overview'
+    ? { ...viewCopy.overview, title: `Good morning, ${authUser}` }
+    : viewCopy[activeView]
 
   useEffect(() => {
+    const controller = new AbortController()
+
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'include', signal: controller.signal })
+        if (response.status === 401) {
+          setAuthStatus('signed_out')
+          return
+        }
+        if (!response.ok) {
+          throw new Error(await getApiError(response))
+        }
+        const user = await response.json() as { username: string }
+        setAuthUser(user.username)
+        setAuthStatus('signed_in')
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setAuthError(error instanceof Error ? error.message : 'Unable to verify your session.')
+          setAuthStatus('signed_out')
+        }
+      }
+    }
+
+    void checkSession()
+    return () => controller.abort()
+  }, [])
+
+  useEffect(() => {
+    if (authStatus !== 'signed_in') return
     const controller = new AbortController()
 
     async function loadAthletes() {
@@ -141,18 +177,19 @@ function App() {
 
     void loadAthletes()
     return () => controller.abort()
-  }, [])
+  }, [authStatus])
 
   useEffect(() => {
+    if (authStatus !== 'signed_in') return
     const controller = new AbortController()
     const periodKey = period === 'This week' ? 'week' : period === 'This quarter' ? 'quarter' : 'month'
 
     async function loadDashboard() {
       try {
         const [summaryResponse, trendResponse, sessionsResponse] = await Promise.all([
-          fetch(`/api/dashboard/summary?period=${periodKey}`, { signal: controller.signal }),
-          fetch('/api/dashboard/performance-trend', { signal: controller.signal }),
-          fetch('/api/dashboard/upcoming-sessions', { signal: controller.signal }),
+          fetch(`/api/dashboard/summary?period=${periodKey}`, { credentials: 'include', signal: controller.signal }),
+          fetch('/api/dashboard/performance-trend', { credentials: 'include', signal: controller.signal }),
+          fetch('/api/dashboard/upcoming-sessions', { credentials: 'include', signal: controller.signal }),
         ])
         const failedResponse = [summaryResponse, trendResponse, sessionsResponse].find((response) => !response.ok)
         if (failedResponse) {
@@ -181,7 +218,7 @@ function App() {
 
     void loadDashboard()
     return () => controller.abort()
-  }, [period, dashboardRefresh])
+  }, [period, dashboardRefresh, authStatus])
 
   function showToast(message: string) {
     setToast(message)
@@ -199,6 +236,7 @@ function App() {
     try {
       const response = await fetch(`/api/athletes/${athlete.id}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fields),
       })
@@ -211,6 +249,8 @@ function App() {
       setAthletes((current) => current.map((item) => item.id === athlete.id ? { ...updatedAthlete, score: item.score, focus: item.focus } : item))
       setSelectedAthlete((current) => current?.id === athlete.id ? { ...updatedAthlete, score: current.score, focus: current.focus } : current)
       setEditingAthlete(null)
+      setLoadingDashboard(true)
+      setDashboardRefresh((current) => current + 1)
       showToast(`${updatedAthlete.name}’s profile was updated.`)
     } catch (error) {
       setAthleteMutationError(error instanceof Error ? error.message : 'Unable to update athlete.')
@@ -224,7 +264,7 @@ function App() {
 
     setAthleteMutationError('')
     try {
-      const response = await fetch(`/api/athletes/${athlete.id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/athletes/${athlete.id}`, { method: 'DELETE', credentials: 'include' })
       if (!response.ok) {
         throw new Error(await getApiError(response))
       }
@@ -239,16 +279,67 @@ function App() {
     }
   }
 
+  async function authenticate(mode: 'login' | 'signup', username: string, password: string) {
+    setAuthBusy(true)
+    setAuthError('')
+    try {
+      const response = await fetch(`/api/auth/${mode}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+      if (!response.ok) {
+        throw new Error(await getApiError(response))
+      }
+      const user = await response.json() as { username: string }
+      setAuthUser(user.username)
+      setLoadingAthletes(true)
+      setLoadingDashboard(true)
+      setAuthStatus('signed_in')
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Unable to sign in.')
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
+  async function signOut() {
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      if (!response.ok) {
+        throw new Error(await getApiError(response))
+      }
+      setAuthUser('')
+      setAuthStatus('signed_out')
+      setAthletes([])
+      setSelectedAthlete(null)
+      setDashboardSummary(null)
+      setPerformanceTrend([])
+      setUpcomingSessions([])
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to sign out.')
+    }
+  }
+
+  if (authStatus === 'checking') {
+    return <main className="auth-page"><p role="status">Checking your session…</p></main>
+  }
+  if (authStatus === 'signed_out') {
+    return <AuthScreen busy={authBusy} error={authError} onAuthenticate={authenticate} />
+  }
+
   return (
     <div className="app-shell">
-      <Sidebar activeView={activeView} onSelect={(view) => { setActiveView(view); setSelectedAthlete(null) }} />
+      <Sidebar activeView={activeView} username={authUser} onSelect={(view) => { setActiveView(view); setSelectedAthlete(null) }} />
       <main className="main-area">
         <header className="topbar">
           <div className="breadcrumb"><span>Academy workspace</span><ChevronRight size={14} aria-hidden="true" /><strong>{activeView === 'overview' ? 'Overview' : copy.title}</strong></div>
           <div className="topbar-actions">
             <button className="icon-button" type="button" title="Search athletes" aria-label="Search athletes" onClick={() => setActiveView('athletes')}><Search size={17} /></button>
             <button className="icon-button notification-button" type="button" title="Notifications" aria-label="Notifications" onClick={() => showToast('You’re all caught up.')}><Bell size={17} /><span /></button>
-            <span className="coach-avatar" aria-label="Jordan Miller">JM</span>
+            <span className="coach-username">{authUser}</span>
+            <button className="icon-button" type="button" title="Sign out" aria-label="Sign out" onClick={() => void signOut()}><LogOut size={17} /></button>
           </div>
         </header>
 
