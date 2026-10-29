@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import { errorHandler } from './lib/http.js'
 import { athleteRoutes } from './routes/athletes.js'
 import { assessmentRoutes } from './routes/assessments.js'
+import { dashboardRoutes } from './routes/dashboard.js'
 import { trainingSessionRoutes } from './routes/trainingSessions.js'
 
 export const app = express()
@@ -23,5 +24,6 @@ app.get('/api/health', (_request, response) => {
 
 app.use('/api/athletes', athleteRoutes)
 app.use('/api/assessments', assessmentRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/training-sessions', trainingSessionRoutes)
 app.use(errorHandler)
