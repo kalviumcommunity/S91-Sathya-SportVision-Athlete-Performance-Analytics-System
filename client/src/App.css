@@ -106,6 +106,8 @@ h1 { margin-bottom: 5px; font: 600 27px 'Space Grotesk', sans-serif; }
 .focus-pill { padding: 4px 7px; border-radius: 4px; background: #f2f5ef; color: #506b57; font-size: 8px; }
 .row-action { display: grid; width: 24px; height: 24px; place-items: center; border: 0; border-radius: 5px; background: transparent; color: #87918a; cursor: pointer; }
 .row-action:hover { background: #edf4ee; color: var(--green); }
+.row-actions { display: flex; align-items: center; gap: 3px; }
+.row-action-delete:hover { background: #fff0eb; color: #a53d26; }
 .schedule-panel { padding-bottom: 9px; }
 .schedule-panel .panel-heading { align-items: center; }
 .session-list { padding: 8px 16px 0; }
@@ -121,6 +123,17 @@ h1 { margin-bottom: 5px; font: 600 27px 'Space Grotesk', sans-serif; }
 .selected-note { display: flex; flex-direction: column; gap: 4px; margin: 12px 18px 0; padding: 12px; border-left: 3px solid var(--green); background: #f1f5ef; }
 .selected-note strong { font: 600 11px 'Space Grotesk', sans-serif; }
 .selected-note span { color: var(--muted); font-size: 10px; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; overflow-y: auto; padding: 20px; background: #17241f80; }
+.athlete-editor { width: min(520px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: white; box-shadow: 0 18px 55px #17241f40; }
+.athlete-editor > h2 { margin: 0 0 5px; font: 600 19px 'Space Grotesk', sans-serif; }
+.athlete-editor > p { margin: 0 0 18px; color: var(--muted); font-size: 12px; }
+.athlete-editor-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.athlete-editor-form > label { display: grid; gap: 5px; color: #536159; font-size: 11px; font-weight: 600; }
+.athlete-editor-form input, .athlete-editor-form select { width: 100%; min-height: 38px; padding: 7px 9px; border: 1px solid #ccd7ce; border-radius: 6px; background: white; color: var(--ink); font-size: 12px; }
+.athlete-editor-form input:focus, .athlete-editor-form select:focus { outline: 2px solid #95bca4; outline-offset: 1px; }
+.athlete-editor-form > .api-error, .athlete-editor-actions { grid-column: 1 / -1; }
+.athlete-editor-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+.athlete-editor-actions button:disabled { cursor: wait; opacity: .65; }
 .training-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .session-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .session-card { padding: 17px; }
@@ -163,7 +176,8 @@ h1 { margin-bottom: 5px; font: 600 27px 'Space Grotesk', sans-serif; }
   .chart-wrap { padding-right: 8px; padding-left: 8px; }
   .insight-panel { min-height: 230px; }
   .roster-panel, .schedule-panel { overflow: hidden; }
-  .athlete-table { min-width: 555px; }
+  .athlete-table { min-width: 625px; }
+  .athlete-editor { padding: 19px; }
   .session-grid { grid-template-columns: 1fr; }
   .training-toolbar { align-items: center; }
   .session-card { padding: 15px; }

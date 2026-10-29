@@ -33,6 +33,7 @@ athleteRoutes.get('/', async (_request, response) => {
     sport: athlete.sport,
     group: athlete.group,
     position: athlete.position,
+    dateOfBirth: athlete.dateOfBirth?.toISOString() ?? null,
     status: athlete.status,
     latestAssessment: latestAssessments.get(String(athlete._id)) ?? null,
   })))
