@@ -41,6 +41,14 @@ athleteRoutes.get('/', async (_request, response) => {
 
 athleteRoutes.get('/:id', async (request, response) => {
   const athlete = await Athlete.findById(getObjectId(request))
+    .populate({
+      path: 'assessments',
+      options: { sort: { assessedAt: -1 } },
+    })
+    .populate({
+      path: 'trainingSessions',
+      options: { sort: { scheduledAt: -1 } },
+    })
   if (!athlete) {
     throw new HttpError(404, 'Athlete not found.')
   }

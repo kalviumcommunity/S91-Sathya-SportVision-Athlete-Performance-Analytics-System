@@ -15,9 +15,27 @@ const athleteSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 )
 
 athleteSchema.index({ group: 1, status: 1 })
+
+athleteSchema.virtual('assessments', {
+  ref: 'Assessment',
+  localField: '_id',
+  foreignField: 'athlete',
+  justOne: false,
+})
+
+athleteSchema.virtual('trainingSessions', {
+  ref: 'TrainingSession',
+  localField: '_id',
+  foreignField: 'athletes',
+  justOne: false,
+})
 
 export const Athlete = mongoose.models.Athlete ?? mongoose.model('Athlete', athleteSchema)
