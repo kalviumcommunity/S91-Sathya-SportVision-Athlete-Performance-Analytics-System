@@ -7,6 +7,7 @@ import { HttpError, getBodyFields, getObjectId } from '../lib/http.js'
 export const assessmentRoutes = Router()
 
 const assessmentFields = ['athlete', 'assessedAt', 'overallScore', 'metrics', 'notes']
+const requiredAssessmentFields = ['athlete', 'assessedAt', 'overallScore', 'metrics']
 
 assessmentRoutes.get('/', async (request, response) => {
   const athleteId = request.query.athlete
@@ -34,6 +35,20 @@ assessmentRoutes.post('/', async (request, response) => {
   }
   const assessment = await Assessment.create(fields)
   response.status(201).json(assessment)
+})
+
+assessmentRoutes.put('/:id', async (request, response) => {
+  const fields = getBodyFields(request, assessmentFields, requiredAssessmentFields)
+  if (typeof fields.athlete !== 'string' || !fields.athlete || !await Athlete.exists({ _id: fields.athlete })) {
+    throw new HttpError(400, 'Assessment athlete must reference an existing athlete.')
+  }
+  const assessment = await Assessment.findById(getObjectId(request))
+  if (!assessment) {
+    throw new HttpError(404, 'Assessment not found.')
+  }
+  assessment.overwrite(fields)
+  await assessment.save()
+  response.json(assessment)
 })
 
 assessmentRoutes.patch('/:id', async (request, response) => {

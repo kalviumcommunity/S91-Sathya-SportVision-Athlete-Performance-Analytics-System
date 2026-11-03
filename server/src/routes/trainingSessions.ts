@@ -14,6 +14,7 @@ const trainingSessionFields = [
   'athletes',
   'status',
 ]
+const requiredTrainingSessionFields = ['title', 'scheduledAt', 'durationMinutes', 'athletes', 'status']
 
 async function validateAthletes(athleteIds: unknown): Promise<void> {
   if (!Array.isArray(athleteIds) || athleteIds.length === 0 ||
@@ -44,6 +45,18 @@ trainingSessionRoutes.post('/', async (request, response) => {
   await validateAthletes(fields.athletes)
   const session = await TrainingSession.create(fields)
   response.status(201).json(session)
+})
+
+trainingSessionRoutes.put('/:id', async (request, response) => {
+  const fields = getBodyFields(request, trainingSessionFields, requiredTrainingSessionFields)
+  await validateAthletes(fields.athletes)
+  const session = await TrainingSession.findById(getObjectId(request))
+  if (!session) {
+    throw new HttpError(404, 'Training session not found.')
+  }
+  session.overwrite(fields)
+  await session.save()
+  response.json(session)
 })
 
 trainingSessionRoutes.patch('/:id', async (request, response) => {

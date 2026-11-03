@@ -7,6 +7,7 @@ import { HttpError, getBodyFields, getObjectId } from '../lib/http.js'
 export const athleteRoutes = Router()
 
 const athleteFields = ['firstName', 'lastName', 'sport', 'group', 'position', 'dateOfBirth', 'status']
+const requiredAthleteFields = ['firstName', 'lastName', 'sport', 'group', 'status']
 const assessmentFields = ['assessedAt', 'overallScore', 'metrics', 'notes']
 
 athleteRoutes.get('/', async (_request, response) => {
@@ -72,6 +73,17 @@ athleteRoutes.post('/:id/assessments', async (request, response) => {
     athlete: athleteId,
   })
   response.status(201).json(assessment)
+})
+
+athleteRoutes.put('/:id', async (request, response) => {
+  const fields = getBodyFields(request, athleteFields, requiredAthleteFields)
+  const athlete = await Athlete.findById(getObjectId(request))
+  if (!athlete) {
+    throw new HttpError(404, 'Athlete not found.')
+  }
+  athlete.overwrite(fields)
+  await athlete.save()
+  response.json(athlete)
 })
 
 athleteRoutes.patch('/:id', async (request, response) => {

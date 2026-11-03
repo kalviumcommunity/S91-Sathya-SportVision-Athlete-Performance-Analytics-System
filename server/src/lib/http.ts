@@ -18,7 +18,11 @@ export function getObjectId(request: Request, parameter = 'id'): string {
   return id
 }
 
-export function getBodyFields(request: Request, allowedFields: string[]): Record<string, unknown> {
+export function getBodyFields(
+  request: Request,
+  allowedFields: string[],
+  requiredFields: string[] = [],
+): Record<string, unknown> {
   const body: unknown = request.body
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     throw new HttpError(400, 'Request body must be a JSON object.')
@@ -28,6 +32,10 @@ export function getBodyFields(request: Request, allowedFields: string[]): Record
   const unknownFields = fields.filter((field) => !allowedFields.includes(field))
   if (unknownFields.length > 0) {
     throw new HttpError(400, `Unknown field(s): ${unknownFields.join(', ')}.`)
+  }
+  const missingFields = requiredFields.filter((field) => !fields.includes(field))
+  if (missingFields.length > 0) {
+    throw new HttpError(400, `Request body must include required field(s): ${missingFields.join(', ')}.`)
   }
   if (fields.length === 0) {
     throw new HttpError(400, 'Request body must include at least one field.')
